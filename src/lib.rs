@@ -3,6 +3,7 @@ use axum::{
     routing::{get, post},
     Router,
 };
+use config::CONFIG;
 use fedimint_client::{get_config_from_db, ClientArc, FederationInfo};
 use fedimint_core::db::Database;
 use fedimint_ln_client::LightningClientInit;
@@ -40,14 +41,13 @@ pub async fn create_app() -> Result<Router> {
 }
 
 async fn load_fedimint_client() -> Result<ClientArc> {
-    let c = config::Config::from_env()?;
     let db = Database::new(
-        fedimint_rocksdb::RocksDb::open(c.db_path)?,
+        fedimint_rocksdb::RocksDb::open(CONFIG.db_path.clone())?,
         Default::default(),
     );
     let mut client_builder = fedimint_client::Client::builder();
     if get_config_from_db(&db).await.is_none() {
-        let federation_info = FederationInfo::from_invite_code(c.invite_code).await?;
+        let federation_info = FederationInfo::from_invite_code(CONFIG.invite_code.clone()).await?;
         client_builder.with_federation_info(federation_info);
     };
     client_builder.with_database(db);
@@ -55,7 +55,7 @@ async fn load_fedimint_client() -> Result<ClientArc> {
     client_builder.with_module(MintClientInit);
     client_builder.with_module(LightningClientInit);
     client_builder.with_primary_module(1);
-    let client_res = client_builder.build(c.root_secret).await?;
+    let client_res = client_builder.build(CONFIG.root_secret.clone()).await?;
 
     Ok(client_res)
 }
