@@ -15,13 +15,15 @@ pub async fn load_fedimint_client() -> Result<ClientArc> {
         Default::default(),
     );
     let mut client_builder = fedimint_client::Client::builder();
-    let federation_info = FederationInfo::from_invite_code(c.invite_code).await?;
+    if get_config_from_db(&db).await.is_none() {
+        let federation_info = FederationInfo::from_invite_code(c.invite_code).await?;
+        client_builder.with_federation_info(federation_info);
+    };
     client_builder.with_database(db);
     client_builder.with_module(WalletClientInit(None));
     client_builder.with_module(MintClientInit);
     client_builder.with_module(LightningClientInit);
     client_builder.with_primary_module(1);
-    client_builder.with_federation_info(federation_info);
     let client_res = client_builder.build(c.root_secret).await?;
 
     Ok(client_res)

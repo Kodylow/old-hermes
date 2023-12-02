@@ -4,6 +4,8 @@ use axum::{
     Router,
 };
 use dotenv::dotenv;
+use fedimint_core::Amount;
+use fedimint_ln_client::LightningClientModule;
 use fedimint_lnurl::{
     load_fedimint_client,
     routes::{handle_readme, lnurlp_callback, lnurlp_verify, register, well_known},
@@ -15,12 +17,15 @@ async fn main() -> Result<()> {
     dotenv().ok();
     tracing_subscriber::fmt::init();
 
-    let fedimint_client = load_fedimint_client().await?;
+    // let fedimint_client = load_fedimint_client().await?;
     info!("Loaded fedimint client");
-    info!(
-        "Fedimint client info: {:?}",
-        fedimint_client.federation_id()
-    );
+    // info!(
+    //     "invoice: {:?}",
+    //     fedimint_client
+    //         .get_first_module::<LightningClientModule>()
+    //         .create_bolt11_invoice(Amount { msats: 1000 }, "test invoice".to_string(), None, ())
+    //         .await?
+    // );
 
     let app = Router::new()
         .route("/", get(handle_readme))
