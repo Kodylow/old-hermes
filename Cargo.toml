@@ -24,3 +24,4 @@ fedimint-core = { git = "https://github.com/fedimint/fedimint", branch = "master
 fedimint-wallet-client = { git = "https://github.com/fedimint/fedimint", branch = "master" }
 fedimint-mint-client = { git = "https://github.com/fedimint/fedimint", branch = "master" }
 fedimint-ln-client = { git = "https://github.com/fedimint/fedimint", branch = "master" }
+fedimint-rocksdb = { git = "https://github.com/fedimint/fedimint", branch = "master" }
