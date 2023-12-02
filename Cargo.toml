@@ -27,3 +27,4 @@ fedimint-ln-client = { git = "https://github.com/fedimint/fedimint", branch = "m
 fedimint-rocksdb = { git = "https://github.com/fedimint/fedimint", branch = "master" }
 url = "2.5.0"
 nostr = "0.25.0"
+lazy_static = "1.4.0"

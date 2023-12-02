@@ -1074,6 +1074,7 @@ dependencies = [
  "fedimint-mint-client",
  "fedimint-rocksdb",
  "fedimint-wallet-client",
+ "lazy_static",
  "nostr",
  "serde",
  "serde_json",

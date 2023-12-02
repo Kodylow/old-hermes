@@ -5,11 +5,18 @@ use std::env;
 use std::path::PathBuf;
 use std::str::FromStr;
 use tracing::info;
+use url::Url;
+
+lazy_static::lazy_static! {
+    pub static ref CONFIG: Config =
+        Config::from_env().expect("Failed to load config from environment");
+}
 
 pub struct Config {
     pub invite_code: InviteCode,
     pub root_secret: DerivableSecret,
     pub db_path: PathBuf,
+    pub domain: Url,
 }
 
 impl Config {
@@ -26,12 +33,16 @@ impl Config {
         let secret = env::var("SECRET_KEY").expect("SECRET_KEY must be set");
         let root_secret = create_root_secret(secret);
 
+        let domain = env::var("DOMAIN").unwrap_or("localhost:3000".to_string());
+        let domain = Url::parse(&domain).expect("Invalid domain");
+
         info!("Loaded config");
 
         Ok(Self {
             invite_code,
             root_secret,
             db_path,
+            domain,
         })
     }
 }
