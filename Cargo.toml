@@ -25,3 +25,5 @@ fedimint-wallet-client = { git = "https://github.com/fedimint/fedimint", branch 
 fedimint-mint-client = { git = "https://github.com/fedimint/fedimint", branch = "master" }
 fedimint-ln-client = { git = "https://github.com/fedimint/fedimint", branch = "master" }
 fedimint-rocksdb = { git = "https://github.com/fedimint/fedimint", branch = "master" }
+url = "2.5.0"
+nostr = "0.25.0"

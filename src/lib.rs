@@ -1,14 +1,45 @@
 use anyhow::Result;
+use axum::{
+    routing::{get, post},
+    Router,
+};
 use fedimint_client::{get_config_from_db, ClientArc, FederationInfo};
 use fedimint_core::db::Database;
 use fedimint_ln_client::LightningClientInit;
 use fedimint_mint_client::MintClientInit;
 use fedimint_wallet_client::WalletClientInit;
 
-pub mod config;
-pub mod routes;
+use crate::routes::{handle_readme, lnurlp_callback, lnurlp_verify, register, well_known};
 
-pub async fn load_fedimint_client() -> Result<ClientArc> {
+pub mod config;
+pub mod error;
+pub mod models;
+pub mod routes;
+pub mod utils;
+
+#[derive(Debug, Clone)]
+pub struct AppState {
+    pub fm_client: ClientArc,
+}
+
+pub async fn create_app() -> Result<Router> {
+    let state = AppState {
+        fm_client: load_fedimint_client().await?,
+    };
+
+    let app = Router::new()
+        .route("/", get(handle_readme))
+        .route("/health", get(|| async { "OK" }))
+        .route("/register", post(register))
+        .route("/.well-known/lnurlp/:username", get(well_known))
+        .route("/lnurlp/:username/callback", get(lnurlp_callback))
+        .route("/lnurlp/:username/verify", get(lnurlp_verify))
+        .with_state(state);
+
+    Ok(app)
+}
+
+async fn load_fedimint_client() -> Result<ClientArc> {
     let c = config::Config::from_env()?;
     let db = Database::new(
         fedimint_rocksdb::RocksDb::open(c.db_path)?,
