@@ -11,7 +11,9 @@ use tracing::info;
 
 use crate::{
     error::AppError,
-    models::{LnurlCallbackParams, LnurlCallbackResponse, LnurlStatus, LnurlWellKnownResponse},
+    models::lnurl::{
+        LnurlCallbackParams, LnurlCallbackResponse, LnurlStatus, LnurlType, LnurlWellKnownResponse,
+    },
     AppState,
 };
 
@@ -43,8 +45,8 @@ pub async fn well_known(
         min_sendable: "1000".parse()?,
         metadata: "[]".to_string(),
         comment_allowed: None,
-        tag: crate::models::LnurlType::PayRequest,
-        status: crate::models::LnurlStatus::Ok,
+        tag: LnurlType::PayRequest,
+        status: LnurlStatus::Ok,
         nostr_pubkey: None,
         allows_nostr: false,
     };
