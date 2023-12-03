@@ -1,13 +1,17 @@
 use std::fs::read_to_string;
 
+use async_utility::futures_util::StreamExt;
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
     Json,
 };
 use axum_macros::debug_handler;
-use fedimint_core::Amount;
+use fedimint_client::oplog::UpdateStreamOrOutcome;
+use fedimint_core::{core::OperationId, Amount};
 use fedimint_ln_client::LightningClientModule;
+use std::str::FromStr;
+use tokio::sync::oneshot;
 use tracing::{error, info};
 
 use crate::{
@@ -165,8 +169,43 @@ pub async fn lnurlp_callback(
 }
 
 #[axum_macros::debug_handler]
-pub async fn lnurlp_verify(username: String) -> String {
-    format!("lnurlp_verify stub for {}", username)
+pub async fn lnurlp_verify(
+    Path(params): Path<(String, OperationId)>,
+    State(state): State<AppState>,
+) -> Result<Json<bool>, AppError> {
+    let (_username, operation_id) = params;
+    let subscription = state
+        .fm_client
+        .get_first_module::<LightningClientModule>()
+        .subscribe_ln_receive(operation_id)
+        .await
+        .expect("subscribing to a just created operation can't fail");
+
+    match subscription {
+        UpdateStreamOrOutcome::UpdateStream(stream) => {
+            let (tx, rx) = oneshot::channel();
+            tokio::spawn(async move {
+                let mut stream = stream.fuse();
+                tokio::select! {
+                    _ = stream.next() => {
+                        tx.send(true).unwrap();
+                    }
+                    _ = tokio::time::sleep(std::time::Duration::from_secs(10)) => {
+                        tx.send(false).unwrap();
+                    }
+                }
+            });
+            info!("waiting for stream to complete");
+            let res = rx.await.unwrap();
+            return Ok(Json(res));
+        }
+        UpdateStreamOrOutcome::Outcome(outcome) => {
+            return Err(AppError {
+                error: anyhow::anyhow!("Operation status: {:?}", outcome),
+                status: StatusCode::BAD_REQUEST,
+            });
+        }
+    }
 }
 
 // let client = nostr_sdk::Client::new(&Keys::generate());

@@ -38,7 +38,7 @@ pub async fn create_app() -> Result<Router> {
         .route("/.well-known/nostr.json", get(nip05_well_known))
         .route("/.well-known/lnurlp/:username", get(lnurlp_well_known))
         .route("/lnurlp/:username/callback", get(lnurlp_callback))
-        .route("/lnurlp/:username/verify", get(lnurlp_verify))
+        .route("/lnurlp/:username/verify/:operation_id", get(lnurlp_verify))
         .with_state(state);
 
     Ok(app)

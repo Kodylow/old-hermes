@@ -1093,6 +1093,7 @@ name = "fedimint_lnurl"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "async-utility",
  "axum",
  "axum-macros",
  "dotenv",
