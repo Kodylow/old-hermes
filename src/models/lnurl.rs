@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use crate::utils::empty_string_as_none;
 use fedimint_core::Amount;
 use nostr::prelude::XOnlyPublicKey;

@@ -1,3 +1,5 @@
+use std::fs::read_to_string;
+
 use anyhow::Result;
 use axum::{
     routing::{get, post},
@@ -9,30 +11,32 @@ use fedimint_core::db::Database;
 use fedimint_ln_client::LightningClientInit;
 use fedimint_mint_client::MintClientInit;
 use fedimint_wallet_client::WalletClientInit;
+use models::nostr::Nip05WellKnown;
+use routes::nip05_well_known;
+use state::AppState;
 
-use crate::routes::{handle_readme, lnurlp_callback, lnurlp_verify, register, well_known};
+use crate::routes::{handle_readme, lnurlp_callback, lnurlp_verify, lnurlp_well_known, register};
 
 pub mod config;
 pub mod error;
+pub mod helpers;
 pub mod models;
 pub mod routes;
+pub mod state;
 pub mod utils;
-
-#[derive(Debug, Clone)]
-pub struct AppState {
-    pub fm_client: ClientArc,
-}
 
 pub async fn create_app() -> Result<Router> {
     let state = AppState {
         fm_client: load_fedimint_client().await?,
+        nostr_json: get_nostr_json(),
     };
 
     let app = Router::new()
         .route("/", get(handle_readme))
         .route("/health", get(|| async { "OK" }))
         .route("/register", post(register))
-        .route("/.well-known/lnurlp/:username", get(well_known))
+        .route("/.well-known/nostr.json", get(nip05_well_known))
+        .route("/.well-known/lnurlp/:username", get(lnurlp_well_known))
         .route("/lnurlp/:username/callback", get(lnurlp_callback))
         .route("/lnurlp/:username/verify", get(lnurlp_verify))
         .with_state(state);
@@ -58,4 +62,9 @@ async fn load_fedimint_client() -> Result<ClientArc> {
     let client_res = client_builder.build(CONFIG.root_secret.clone()).await?;
 
     Ok(client_res)
+}
+
+fn get_nostr_json() -> Nip05WellKnown {
+    let nostr_str = read_to_string("nostr.json").expect("Could not read nostr.json");
+    serde_json::from_str::<Nip05WellKnown>(&nostr_str).expect("Invalid nostr.json")
 }

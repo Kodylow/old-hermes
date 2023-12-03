@@ -1,22 +1,23 @@
-use std::fs::read_to_string;
+use std::{collections::HashMap, fs::read_to_string};
 
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
     Json,
 };
+use axum_macros::debug_handler;
 use fedimint_core::Amount;
 use fedimint_ln_client::LightningClientModule;
-use nostr::prelude::XOnlyPublicKey;
 use nostr::{Filter, Keys, Kind, Metadata};
-use serde::Deserialize;
 use tracing::info;
 
 use crate::{
     error::AppError,
+    helpers::get_pubkey_and_relays,
     models::lnurl::{
         LnurlCallbackParams, LnurlCallbackResponse, LnurlStatus, LnurlType, LnurlWellKnownResponse,
     },
+    models::nostr::{Nip05WellKnown, Nip05WellKnownParams, RegisterParams},
     AppState,
 };
 
@@ -27,12 +28,7 @@ pub async fn handle_readme() -> String {
     readme
 }
 
-#[derive(Deserialize)]
-pub struct RegisterParams {
-    pub username: Option<String>,
-    pub nostr_pubkey: XOnlyPublicKey,
-}
-
+#[debug_handler]
 pub async fn register(Json(params): Json<RegisterParams>) -> Result<Json<bool>, AppError> {
     info!(
         "register called with nostr_pubkey: {:?}",
@@ -69,7 +65,30 @@ pub async fn register(Json(params): Json<RegisterParams>) -> Result<Json<bool>, 
 }
 
 #[axum_macros::debug_handler]
-pub async fn well_known(
+pub async fn nip05_well_known(
+    Query(params): Query<Nip05WellKnownParams>,
+    State(state): State<AppState>,
+) -> Result<Json<Nip05WellKnown>, AppError> {
+    info!("nip05_well_known called with name: {:?}", params.name);
+
+    let (pubkey, relays) = get_pubkey_and_relays(&state, &params).await?;
+
+    let mut names = HashMap::new();
+    names.insert(params.name.clone(), pubkey.clone());
+
+    let mut relays_map = HashMap::new();
+    relays_map.insert(pubkey.clone(), relays);
+
+    let res = Nip05WellKnown {
+        names,
+        relays: relays_map,
+    };
+
+    Ok(Json(res))
+}
+
+#[axum_macros::debug_handler]
+pub async fn lnurlp_well_known(
     Path(username): Path<String>,
 ) -> Result<Json<LnurlWellKnownResponse>, AppError> {
     if username != "kody".to_string() {
