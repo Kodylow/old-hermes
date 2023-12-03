@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize)]
 pub struct RegisterParams {
-    pub username: Option<String>,
+    pub name: Option<String>,
     pub nostr_pubkey: XOnlyPublicKey,
 }
 

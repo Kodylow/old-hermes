@@ -1,18 +1,20 @@
 {
-    "names": {
-        "kody": "de8823cdc979bf4c753223edc19a7abc35ecff2959ef50ca9e9d573ac0f83fd0",
-        "carman": "e1ff3bfdd4e40315959b08b4fcc8245eaa514637e1d4ec2ae166b743341be1af",
-        "tony": "5be6446aa8a31c11b3b453bf8dafc9b346ff328d1fa11a0fa02a1e6461f6a9b1"
-    },
-    "relays": {
-        "de8823cdc979bf4c753223edc19a7abc35ecff2959ef50ca9e9d573ac0f83fd0": [
-            "wss://nostr.mutinywallet.com"
-        ],
-        "e1ff3bfdd4e40315959b08b4fcc8245eaa514637e1d4ec2ae166b743341be1af": [
-            "wss://nostr.mutinywallet.com"
-        ],
-        "5be6446aa8a31c11b3b453bf8dafc9b346ff328d1fa11a0fa02a1e6461f6a9b1": [
-            "wss://nostr.mutinywallet.com"
-        ]
-    }
+  "names": {
+    "tony": "5be6446aa8a31c11b3b453bf8dafc9b346ff328d1fa11a0fa02a1e6461f6a9b1",
+    "testy": "5be6446aa8a31c11b3b453bf8dafc9b346ff328d1fa11a0fa02a1e6461f6a9b1",
+    "kody": "de8823cdc979bf4c753223edc19a7abc35ecff2959ef50ca9e9d573ac0f83fd0",
+    "test": "5be6446aa8a31c11b3b453bf8dafc9b346ff328d1fa11a0fa02a1e6461f6a9b1",
+    "carman": "e1ff3bfdd4e40315959b08b4fcc8245eaa514637e1d4ec2ae166b743341be1af"
+  },
+  "relays": {
+    "e1ff3bfdd4e40315959b08b4fcc8245eaa514637e1d4ec2ae166b743341be1af": [
+      "wss://nostr.mutinywallet.com"
+    ],
+    "5be6446aa8a31c11b3b453bf8dafc9b346ff328d1fa11a0fa02a1e6461f6a9b1": [
+      "wss://nostr.mutinywallet.com"
+    ],
+    "de8823cdc979bf4c753223edc19a7abc35ecff2959ef50ca9e9d573ac0f83fd0": [
+      "wss://nostr.mutinywallet.com"
+    ]
+  }
 }

@@ -11,6 +11,7 @@ use fedimint_ln_client::LightningClientModule;
 use tracing::{error, info};
 
 use crate::{
+    config::CONFIG,
     error::AppError,
     helpers::get_pubkey_and_relays,
     models::lnurl::{
@@ -29,7 +30,7 @@ pub async fn handle_readme() -> String {
 
 #[debug_handler]
 pub async fn register(
-    State(state): State<AppState>,
+    State(mut state): State<AppState>,
     Json(params): Json<RegisterParams>,
 ) -> Result<Json<bool>, AppError> {
     info!(
@@ -37,22 +38,30 @@ pub async fn register(
         params.nostr_pubkey
     );
 
+    let name = params.name.clone().ok_or_else(|| AppError {
+        error: anyhow::anyhow!("Name not provided"),
+        status: StatusCode::BAD_REQUEST,
+    })?;
+
     let mut nostr_json = state.nostr_json.clone();
-    let username = nostr_json
-        .names
-        .iter()
-        .find(|(_, pubkey)| **pubkey == params.nostr_pubkey)
-        .map(|(username, _)| username.clone())
-        .expect("Username not found");
 
     // if not registered, add to nostr.json
-    nostr_json
-        .names
-        .insert(username, params.nostr_pubkey.clone());
+    if !nostr_json.names.contains_key(&name) {
+        nostr_json.names.insert(name, params.nostr_pubkey.clone());
 
-    // write nostr.json to disk
-    let nostr_json_str = serde_json::to_string_pretty(&nostr_json)?;
-    std::fs::write("nostr.json", nostr_json_str)?;
+        // write nostr.json to disk
+        let nostr_json_str = serde_json::to_string_pretty(&nostr_json)?;
+        std::fs::write("nostr.json", nostr_json_str)?;
+
+        // set to state
+        state.nostr_json = nostr_json;
+    } else {
+        error!("Name already registered");
+        return Err(AppError {
+            error: anyhow::anyhow!("Name already registered"),
+            status: StatusCode::BAD_REQUEST,
+        });
+    }
 
     Ok(Json(true))
 }
@@ -72,24 +81,31 @@ pub async fn nip05_well_known(
 #[axum_macros::debug_handler]
 pub async fn lnurlp_well_known(
     Path(username): Path<String>,
+    State(state): State<AppState>,
 ) -> Result<Json<LnurlWellKnownResponse>, AppError> {
-    if username != "kody".to_string() {
-        return Err(AppError {
-            error: anyhow::anyhow!("Username not found"),
-            status: StatusCode::NOT_FOUND,
-        });
-    }
+    // see if username exists in nostr.json
+    info!("lnurlp_well_known called with username: {}", username);
+    let nostr_json = &state.nostr_json;
+    let pubkey = nostr_json.names.get(&username).ok_or_else(|| AppError {
+        error: anyhow::anyhow!("Username not found"),
+        status: StatusCode::NOT_FOUND,
+    })?;
 
     let res = LnurlWellKnownResponse {
-        callback: "http://localhost:3000/lnurlp/kody/callback".parse()?,
-        max_sendable: "10000".parse()?,
-        min_sendable: "1000".parse()?,
-        metadata: "[]".to_string(),
+        callback: format!(
+            "http://{}/lnurlp/{}/callback",
+            CONFIG.domain,
+            username.to_string()
+        )
+        .parse()?,
+        max_sendable: Amount { msats: 100000 },
+        min_sendable: Amount { msats: 1000 },
+        metadata: "test metadata".to_string(),
         comment_allowed: None,
         tag: LnurlType::PayRequest,
         status: LnurlStatus::Ok,
-        nostr_pubkey: None,
-        allows_nostr: false,
+        nostr_pubkey: Some(pubkey.clone()),
+        allows_nostr: true,
     };
 
     Ok(Json(res))
