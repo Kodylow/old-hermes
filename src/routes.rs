@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fs::read_to_string};
+use std::fs::read_to_string;
 
 use axum::{
     extract::{Path, Query, State},
@@ -8,8 +8,7 @@ use axum::{
 use axum_macros::debug_handler;
 use fedimint_core::Amount;
 use fedimint_ln_client::LightningClientModule;
-use nostr::{Filter, Keys, Kind, Metadata};
-use tracing::info;
+use tracing::{error, info};
 
 use crate::{
     error::AppError,
@@ -29,37 +28,31 @@ pub async fn handle_readme() -> String {
 }
 
 #[debug_handler]
-pub async fn register(Json(params): Json<RegisterParams>) -> Result<Json<bool>, AppError> {
+pub async fn register(
+    State(state): State<AppState>,
+    Json(params): Json<RegisterParams>,
+) -> Result<Json<bool>, AppError> {
     info!(
         "register called with nostr_pubkey: {:?}",
         params.nostr_pubkey
     );
 
-    let client = nostr_sdk::Client::new(&Keys::generate());
-    client.add_relay("wss://relay.damus.io", None).await?;
-    client
-        .add_relay("wss://nostr.mutinywallet.com", None)
-        .await?;
-    client.connect().await;
+    let mut nostr_json = state.nostr_json.clone();
+    let username = nostr_json
+        .names
+        .iter()
+        .find(|(_, pubkey)| **pubkey == params.nostr_pubkey)
+        .map(|(username, _)| username.clone())
+        .expect("Username not found");
 
-    let filter = Filter::new()
-        .kind(Kind::Metadata)
-        .author(params.nostr_pubkey)
-        .limit(1);
+    // if not registered, add to nostr.json
+    nostr_json
+        .names
+        .insert(username, params.nostr_pubkey.clone());
 
-    let events = client.get_events_of(vec![filter], None).await?;
-
-    if let Some(event) = events.first() {
-        let metadata: Metadata = serde_json::from_str(&event.content)?;
-        println!("nip5: {:?}", metadata.nip05);
-    }
-
-    client
-        .send_direct_msg(params.nostr_pubkey, "connected!".to_string(), None)
-        .await?;
-
-    // lookup username in db if exists, fail
-    // store username and nostr_pubkey in db
+    // write nostr.json to disk
+    let nostr_json_str = serde_json::to_string_pretty(&nostr_json)?;
+    std::fs::write("nostr.json", nostr_json_str)?;
 
     Ok(Json(true))
 }
@@ -71,18 +64,7 @@ pub async fn nip05_well_known(
 ) -> Result<Json<Nip05WellKnown>, AppError> {
     info!("nip05_well_known called with name: {:?}", params.name);
 
-    let (pubkey, relays) = get_pubkey_and_relays(&state, &params).await?;
-
-    let mut names = HashMap::new();
-    names.insert(params.name.clone(), pubkey.clone());
-
-    let mut relays_map = HashMap::new();
-    relays_map.insert(pubkey.clone(), relays);
-
-    let res = Nip05WellKnown {
-        names,
-        relays: relays_map,
-    };
+    let res = get_pubkey_and_relays(&state.nostr_json, &params).await?;
 
     Ok(Json(res))
 }
@@ -134,19 +116,28 @@ pub async fn lnurlp_callback(
         });
     }
 
-    let pr = state
-        .fm_client
-        .get_first_module::<LightningClientModule>()
-        .create_bolt11_invoice(Amount { msats: 1000 }, "test invoice".to_string(), None, ())
-        .await?;
+    let (op_id, pr) =
+        state
+            .fm_client
+            .get_first_module::<LightningClientModule>()
+            .create_bolt11_invoice(
+                Amount {
+                    msats: params.amount,
+                },
+                "test invoice".to_string(),
+                None,
+                (),
+            )
+            .await?;
 
     let verify_url = format!(
-        "http://localhost:3000/lnurlp/kody/verify/{}",
-        pr.0.to_string()
+        "http://localhost:3000/lnurlp/{}/verify/{}",
+        username,
+        op_id.to_string()
     );
 
     let res = LnurlCallbackResponse {
-        pr: pr.1.to_string(),
+        pr: pr.to_string(),
         success_action: None,
         status: LnurlStatus::Ok,
         reason: None,
@@ -161,3 +152,26 @@ pub async fn lnurlp_callback(
 pub async fn lnurlp_verify(username: String) -> String {
     format!("lnurlp_verify stub for {}", username)
 }
+
+// let client = nostr_sdk::Client::new(&Keys::generate());
+//     client.add_relay("wss://relay.damus.io", None).await?;
+//     client
+//         .add_relay("wss://nostr.mutinywallet.com", None)
+//         .await?;
+//     client.connect().await;
+
+//     let filter = Filter::new()
+//         .kind(Kind::Metadata)
+//         .author(params.nostr_pubkey)
+//         .limit(1);
+
+//     let events = client.get_events_of(vec![filter], None).await?;
+
+//     if let Some(event) = events.first() {
+//         let metadata: Metadata = serde_json::from_str(&event.content)?;
+//         println!("nip5: {:?}", metadata.nip05);
+//     }
+
+//     client
+//         .send_direct_msg(params.nostr_pubkey, "connected!".to_string(), None)
+//         .await?;

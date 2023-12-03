@@ -1,28 +1,33 @@
-use crate::{error::AppError, models::nostr::Nip05WellKnownParams, state::AppState};
+use std::collections::HashMap;
+
+use crate::{
+    error::AppError,
+    models::nostr::{Nip05WellKnown, Nip05WellKnownParams},
+};
 use axum::http::StatusCode;
-use nostr::prelude::XOnlyPublicKey;
 
 pub async fn get_pubkey_and_relays(
-    state: &AppState,
+    nostr_json: &Nip05WellKnown,
     params: &Nip05WellKnownParams,
-) -> Result<(XOnlyPublicKey, Vec<String>), AppError> {
-    let pubkey = state
-        .nostr_json
-        .names
-        .get(&params.name)
-        .ok_or_else(|| AppError {
-            error: anyhow::anyhow!("Username not found"),
-            status: StatusCode::NOT_FOUND,
-        })?;
+) -> Result<Nip05WellKnown, AppError> {
+    let pubkey = nostr_json.names.get(&params.name).ok_or_else(|| AppError {
+        error: anyhow::anyhow!("Username not found"),
+        status: StatusCode::NOT_FOUND,
+    })?;
 
-    let relays = state
-        .nostr_json
-        .relays
-        .get(pubkey)
-        .ok_or_else(|| AppError {
-            error: anyhow::anyhow!("Relays not found"),
-            status: StatusCode::NOT_FOUND,
-        })?;
+    let relays = nostr_json.relays.get(pubkey).ok_or_else(|| AppError {
+        error: anyhow::anyhow!("Relays not found"),
+        status: StatusCode::NOT_FOUND,
+    })?;
 
-    Ok((pubkey.clone(), relays.clone()))
+    let mut names = HashMap::new();
+    names.insert(params.name.clone(), pubkey.clone());
+
+    let mut relays_map = HashMap::new();
+    relays_map.insert(pubkey.clone(), relays.clone());
+
+    Ok(Nip05WellKnown {
+        names,
+        relays: relays_map,
+    })
 }
