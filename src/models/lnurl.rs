@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use crate::utils::empty_string_as_none;
 use fedimint_core::Amount;
-use nostr::key::PublicKey;
+use nostr::prelude::XOnlyPublicKey;
 use serde::ser::{SerializeTuple, Serializer};
 use serde::{Deserialize, Serialize};
 use url::Url;
@@ -59,7 +59,7 @@ pub struct LnurlWellKnownResponse {
     pub tag: LnurlType,
     pub status: LnurlStatus,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub nostr_pubkey: Option<PublicKey>,
+    pub nostr_pubkey: Option<XOnlyPublicKey>,
     pub allows_nostr: bool,
 }
 
