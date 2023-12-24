@@ -124,7 +124,9 @@ pub async fn callback(
     });
 
     let verify_url = format!(
-        "http://localhost:3000/lnurlp/{}/verify/{}",
+        "http://{}:{}/lnurlp/{}/verify/{}",
+        CONFIG.domain,
+        CONFIG.port,
         username,
         op_id.to_string()
     );
