@@ -1,8 +1,6 @@
-use std::{fmt::Display, fs::read_to_string, str::FromStr};
+use std::{fmt::Display, str::FromStr};
 
 use serde::{de, Deserialize, Deserializer};
-
-use crate::models::nostr::Nip05WellKnown;
 
 pub fn empty_string_as_none<'de, D, T>(de: D) -> Result<Option<T>, D::Error>
 where
