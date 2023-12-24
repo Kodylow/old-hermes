@@ -3,7 +3,6 @@ use tracing::info;
 
 mod config;
 mod error;
-mod helpers;
 mod models;
 mod router;
 mod utils;

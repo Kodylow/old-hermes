@@ -21,10 +21,13 @@ pub async fn create_router() -> Result<Router> {
         .route("/", get(handle_readme))
         .route("/health", get(|| async { "OK" }))
         .route("/register", post(register))
-        .route("/.well-known/nostr.json", get(nip05_well_known))
-        .route("/.well-known/lnurlp/:username", get(lnurlp_well_known))
-        .route("/lnurlp/:username/callback", get(lnurlp_callback))
-        .route("/lnurlp/:username/verify/:operation_id", get(lnurlp_verify))
+        .route("/.well-known/nostr.json", get(nostr::nip05_well_known))
+        .route("/.well-known/lnurlp/:username", get(lnurlp::well_known))
+        .route("/lnurlp/:username/callback", get(lnurlp::callback))
+        .route(
+            "/lnurlp/:username/verify/:operation_id",
+            get(lnurlp::verify),
+        )
         .with_state(state);
 
     Ok(app)
