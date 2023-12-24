@@ -10,7 +10,6 @@ use axum_macros::debug_handler;
 use fedimint_client::oplog::UpdateStreamOrOutcome;
 use fedimint_core::{core::OperationId, Amount};
 use fedimint_ln_client::LightningClientModule;
-use std::str::FromStr;
 use tokio::sync::oneshot;
 use tracing::{error, info};
 
@@ -22,8 +21,9 @@ use crate::{
         LnurlCallbackParams, LnurlCallbackResponse, LnurlStatus, LnurlType, LnurlWellKnownResponse,
     },
     models::nostr::{Nip05WellKnown, Nip05WellKnownParams, RegisterParams},
-    AppState,
 };
+
+use super::state::AppState;
 
 #[axum_macros::debug_handler]
 pub async fn handle_readme() -> String {

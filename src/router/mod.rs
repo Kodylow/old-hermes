@@ -1,0 +1,32 @@
+use anyhow::Result;
+use axum::{
+    routing::{get, post},
+    Router,
+};
+pub mod handlers;
+pub mod state;
+
+use crate::utils::get_nostr_json;
+use handlers::*;
+use state::AppState;
+
+use self::state::load_fedimint_client;
+
+pub async fn create_router() -> Result<Router> {
+    let state = AppState {
+        fm_client: load_fedimint_client().await?,
+        nostr_json: get_nostr_json(),
+    };
+
+    let app = Router::new()
+        .route("/", get(handle_readme))
+        .route("/health", get(|| async { "OK" }))
+        .route("/register", post(register))
+        .route("/.well-known/nostr.json", get(nip05_well_known))
+        .route("/.well-known/lnurlp/:username", get(lnurlp_well_known))
+        .route("/lnurlp/:username/callback", get(lnurlp_callback))
+        .route("/lnurlp/:username/verify/:operation_id", get(lnurlp_verify))
+        .with_state(state);
+
+    Ok(app)
+}
