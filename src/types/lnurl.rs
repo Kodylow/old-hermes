@@ -93,3 +93,12 @@ pub struct LnurlCallbackResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub routes: Option<Vec<String>>,
 }
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LnurlVerifyResponse {
+    pub status: LnurlStatus,
+    pub settled: bool,
+    pub preimage: String,
+    pub pr: String,
+}
