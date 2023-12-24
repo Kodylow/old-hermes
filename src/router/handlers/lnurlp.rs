@@ -15,7 +15,7 @@ use crate::{
     models::lnurl::{
         LnurlCallbackParams, LnurlCallbackResponse, LnurlStatus, LnurlType, LnurlWellKnownResponse,
     },
-    router::state::AppState,
+    state::AppState,
 };
 
 #[axum_macros::debug_handler]

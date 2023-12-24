@@ -4,7 +4,7 @@ use axum::{extract::State, http::StatusCode, Json};
 use axum_macros::debug_handler;
 use tracing::{error, info};
 
-use crate::{error::AppError, models::nostr::RegisterParams, router::state::AppState};
+use crate::{error::AppError, models::nostr::RegisterParams, state::AppState};
 
 pub mod lnurlp;
 pub mod nostr;

@@ -4,19 +4,12 @@ use axum::{
     Router,
 };
 pub mod handlers;
-pub mod state;
 
 use handlers::*;
-use state::AppState;
 
-use self::state::{get_nostr_json, load_fedimint_client};
+use crate::state::AppState;
 
-pub async fn create_router() -> Result<Router> {
-    let state = AppState {
-        fm_client: load_fedimint_client().await?,
-        nostr_json: get_nostr_json(),
-    };
-
+pub async fn create_router(state: AppState) -> Result<Router> {
     let app = Router::new()
         .route("/", get(handle_readme))
         .route("/health", get(|| async { "OK" }))

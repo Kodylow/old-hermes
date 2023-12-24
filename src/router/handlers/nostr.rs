@@ -7,7 +7,7 @@ use tracing::info;
 use crate::{
     error::AppError,
     models::nostr::{Nip05WellKnown, Nip05WellKnownParams},
-    router::state::AppState,
+    state::AppState,
     utils::get_pubkey_and_relays,
 };
 
