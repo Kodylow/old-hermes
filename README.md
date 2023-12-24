@@ -1,29 +1,37 @@
+![Alt text](assets/hermes_nostrich.png)
+
 # Hermes: A Noncustodial Lightning Address Messenger w/Fedimint
 
-Hermes is a non-custodial, async lightning address server using Fedimint Ecash on the backend.
+Hermes is a non-custodial, asynchronous lightning address server that uses Fedimint Ecash on the backend. The protocol flow of Hermes is as follows:
 
-Users register their nostr pubkey and username with the Hermes server to create a lightning address.
+## Registration
 
-When a sender pays to the lightning address, Hermes uses a Fedimint Client to receive the Lightning Payment immediately by locking the  ecash to the user's registered pubkey.
+1. Users register their Nostr public key and username with the Hermes server. This registration process creates a lightning address for the user.
 
-Hermes then sends the created ecash notes to the recipient via Nostr DM.
+2. The registration requires a small fee in ecash or lightning.
 
-You can register a public key and username on the server by paying a small fee in ecash. The server will then act as a LNURL Lightning Address server for you.
+## Receiving Payments
 
-When someone attempts to pay you via your Lightning Address, the server will use your public key to create a lightning invoice and gateway transaction. 
+1. Sender follows normal lnurlp protocol hitting well-known and callback endpoints.
 
-The lightning gateway (separate from the Hermes Server) claims the invoice preimage by locking ecash to the registered public key. 
+2. Hermes server creates a Fedimint Lightning Gateway transaction based off the receiver's public key, and returns the invoice to the sender via the callback endpoint.
 
-This immediately completes the lightning payment side of the transaction.
+3. Sender pays the lightning invoice, which the lightning gateway immediately completes by locking ecash to the receiver's public key.
 
-The Hermes server then sends you the locked ecash notes via DM, which you can redeem whenever you next connect. The Hermes server CANNOT spend your ecash, but it could maliciously not send it to you (leaving the server with some unspendable ecash).
+4. Hermes server sends a notification to the receiver that they have received a payment.
+
+5. When the receiver's Fedimint Client next connects to their federation, they scan for the payment and reissue the pubkey locked ecash.
+
+Current implementation is a bit different (Hermes receives the ecash and sends the notes to you), but the above is the goal to be purely noncustodial and is pending a few changes to the Fedimint Client.
+
+**Note:** The Hermes server cannot spend your ecash, it is locked to the User's pubkey. It doesn't even need to send you the notification, your Fedimint Client can scan for the payment on its own. The notification just makes the scan faster by telling the client to look for a specific payment or set of payments.
 
 ## Running the Hermes Server
 
-1. Clone the repo, make sure you have rust and docker installed.
+1. Clone the repository and ensure that Rust and Docker are installed on your system.
 
-2. Run `docker compose up -d` to start the postgres database. Make sure you change the username and password in the `docker-compose.yaml`
+2. Start the Postgres database by running `docker compose up -d`. Remember to change the username and password in the `docker-compose.yaml` file.
 
-3. Set environment variables in `.env`, see `example.env` for reference
-   
-4. Run `cargo run` to start the hermes server.
+3. Set the environment variables in the `.env` file. Refer to `example.env` for guidance.
+
+4. Start the Hermes server by running `cargo run`.
