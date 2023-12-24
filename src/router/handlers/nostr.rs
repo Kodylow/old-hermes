@@ -5,10 +5,7 @@ use axum::{
 use tracing::info;
 
 use crate::{
-    error::AppError,
-    state::AppState,
-    types::nostr::{Nip05WellKnown, Nip05WellKnownParams},
-    utils::get_pubkey_and_relays,
+    error::AppError, state::AppState, types::nostr::Nip05WellKnown, utils::get_pubkey_and_relays,
 };
 
 #[axum_macros::debug_handler]

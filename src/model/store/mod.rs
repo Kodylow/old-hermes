@@ -4,8 +4,6 @@ use anyhow::{anyhow, Result};
 use sqlx::postgres::PgPoolOptions;
 use sqlx::{Pool, Postgres};
 
-// endregion: --- Modules
-
 pub type Db = Pool<Postgres>;
 
 pub async fn new_db_pool() -> Result<Db> {

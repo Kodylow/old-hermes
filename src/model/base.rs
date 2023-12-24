@@ -48,6 +48,24 @@ where
     Ok(entity)
 }
 
+pub async fn get_all<MC, E>(mm: &ModelManager) -> Result<Vec<E>>
+where
+    MC: DbBmc,
+    E: for<'r> FromRow<'r, PgRow> + Unpin + Send,
+    E: HasFields,
+{
+    let db = mm.db();
+
+    let entities: Vec<E> =
+        sqlb::select()
+            .table(MC::TABLE)
+            .columns(E::field_names())
+            .fetch_all(db)
+            .await?;
+
+    Ok(entities)
+}
+
 pub async fn list<MC, E>(mm: &ModelManager) -> Result<Vec<E>>
 where
     MC: DbBmc,

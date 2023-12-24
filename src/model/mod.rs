@@ -1,10 +1,11 @@
 mod base;
+mod nip05;
+mod nip05relays;
+mod relay;
 mod store;
 
 use crate::model::store::{new_db_pool, Db};
 use anyhow::Result;
-
-// endregion: --- Modules
 
 #[derive(Clone, Debug)]
 pub struct ModelManager {
