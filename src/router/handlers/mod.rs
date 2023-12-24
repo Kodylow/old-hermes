@@ -4,7 +4,11 @@ use axum::{extract::State, http::StatusCode, Json};
 use axum_macros::debug_handler;
 use tracing::{error, info};
 
-use crate::{error::AppError, state::AppState, types::nostr::RegisterParams};
+use crate::{
+    error::AppError,
+    model::nip05relays::{Nip05RelaysBmc, Nip05RelaysForCreate},
+    state::AppState,
+};
 
 pub mod lnurlp;
 pub mod nostr;
@@ -19,37 +23,17 @@ pub async fn handle_readme() -> String {
 #[debug_handler]
 pub async fn register(
     State(mut state): State<AppState>,
-    Json(params): Json<RegisterParams>,
+    Json(params): Json<Nip05RelaysForCreate>,
 ) -> Result<Json<bool>, AppError> {
-    info!(
-        "register called with nostr_pubkey: {:?}",
-        params.nostr_pubkey
-    );
-
-    let name = params.name.clone().ok_or_else(|| AppError {
-        error: anyhow::anyhow!("Name not provided"),
-        status: StatusCode::BAD_REQUEST,
-    })?;
-
-    let mut nostr_json = state.nostr_json.clone();
-
-    // if not registered, add to nostr.json
-    if !nostr_json.names.contains_key(&name) {
-        nostr_json.names.insert(name, params.nostr_pubkey.clone());
-
-        // write nostr.json to disk
-        let nostr_json_str = serde_json::to_string_pretty(&nostr_json)?;
-        std::fs::write("nostr.json", nostr_json_str)?;
-
-        // set to state
-        state.nostr_json = nostr_json;
-    } else {
-        error!("Name already registered");
-        return Err(AppError {
-            error: anyhow::anyhow!("Name already registered"),
-            status: StatusCode::BAD_REQUEST,
-        });
+    info!("register called with pubkey: {:?}", params.pubkey);
+    match Nip05RelaysBmc::register(&mut state.mm, params).await {
+        Ok(_) => Ok(Json(true)),
+        Err(e) => {
+            error!("Error registering: {:?}", e);
+            return Err(AppError {
+                error: anyhow::anyhow!("Error registering"),
+                status: StatusCode::INTERNAL_SERVER_ERROR,
+            });
+        }
     }
-
-    Ok(Json(true))
 }

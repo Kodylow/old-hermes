@@ -7,15 +7,19 @@ use axum::{
 use fedimint_core::task::spawn;
 use fedimint_core::{core::OperationId, Amount};
 use fedimint_ln_client::{LightningClientModule, LnReceiveState};
+use nostr::secp256k1::XOnlyPublicKey;
+use std::str::FromStr;
 use tracing::{error, info};
 
 use crate::{
     config::CONFIG,
     error::AppError,
+    model::nip05::Nip05Bmc,
     state::AppState,
     types::lnurl::{
         LnurlCallbackParams, LnurlCallbackResponse, LnurlStatus, LnurlType, LnurlWellKnownResponse,
     },
+    types::NameOrPubkey,
 };
 
 #[axum_macros::debug_handler]
@@ -25,11 +29,7 @@ pub async fn well_known(
 ) -> Result<Json<LnurlWellKnownResponse>, AppError> {
     // see if username exists in nostr.json
     info!("well_known called with username: {}", username);
-    let nostr_json = &state.nostr_json;
-    let pubkey = nostr_json.names.get(&username).ok_or_else(|| AppError {
-        error: anyhow::anyhow!("Username not found"),
-        status: StatusCode::NOT_FOUND,
-    })?;
+    let nip05 = Nip05Bmc::get_by(&state.mm, NameOrPubkey::Name, &username).await?;
 
     let res = LnurlWellKnownResponse {
         callback: format!(
@@ -44,7 +44,7 @@ pub async fn well_known(
         comment_allowed: None,
         tag: LnurlType::PayRequest,
         status: LnurlStatus::Ok,
-        nostr_pubkey: Some(pubkey.clone()),
+        nostr_pubkey: Some(XOnlyPublicKey::from_str(&nip05.pubkey)?),
         allows_nostr: true,
     };
 
@@ -71,7 +71,7 @@ pub async fn callback(
         });
     }
 
-    let ln = state.fm_client.get_first_module::<LightningClientModule>();
+    let ln = state.fm.get_first_module::<LightningClientModule>();
 
     let (op_id, pr) = ln
         .create_bolt11_invoice(

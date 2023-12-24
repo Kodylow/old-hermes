@@ -2,6 +2,7 @@ use super::{
     base::{self, DbBmc},
     ModelManager,
 };
+use crate::types::NameOrPubkey;
 use anyhow::{anyhow, Result};
 use serde::Serialize;
 use sqlb::Fields;
@@ -42,19 +43,22 @@ impl Nip05Bmc {
         base::get::<Self, _>(mm, id).await
     }
 
-    pub async fn get_by(mm: &ModelManager, col: String, val: String) -> Result<Nip05> {
-        let db = mm.db();
+    pub async fn get_by(mm: &ModelManager, col: NameOrPubkey, val: &str) -> Result<Nip05> {
+        let column_name = match col {
+            NameOrPubkey::Name => "name",
+            NameOrPubkey::Pubkey => "pubkey",
+        };
 
         let nip05: Nip05 = sqlb::select()
             .table(Self::TABLE)
             .columns(Nip05::field_names())
-            .and_where(&col, "=", &val)
-            .fetch_optional(db)
+            .and_where(column_name, "=", val)
+            .fetch_optional(mm.db())
             .await?
             .ok_or(anyhow!(
                 "Nip05 not found in table '{}', {}: {}",
                 Self::TABLE,
-                col,
+                column_name,
                 val
             ))?;
 

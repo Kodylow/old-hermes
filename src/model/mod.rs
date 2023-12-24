@@ -1,11 +1,16 @@
 mod base;
-mod nip05;
-mod nip05relays;
-mod relay;
+pub mod nip05;
+pub mod nip05relays;
+pub mod relay;
 mod store;
 
 use crate::model::store::{new_db_pool, Db};
 use anyhow::Result;
+
+pub enum NameOrPubkey {
+    Name,
+    Pubkey,
+}
 
 #[derive(Clone, Debug)]
 pub struct ModelManager {

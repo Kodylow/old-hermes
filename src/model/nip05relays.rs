@@ -1,20 +1,17 @@
+use crate::types::nostr::Nip05Relays;
+
 use super::{
     base::{self, DbBmc},
     nip05::{Nip05, Nip05Bmc, Nip05ForCreate},
     relay::{RelayBmc, RelayForCreate},
     ModelManager,
 };
+use crate::types::NameOrPubkey;
 use anyhow::Result;
-use futures::stream::StreamExt;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use sqlb::Fields;
 use sqlb::HasFields;
 use sqlx::FromRow;
-
-pub enum NameOrPubkey {
-    Name,
-    Pubkey,
-}
 
 #[derive(Debug, Clone, Fields, FromRow, Serialize)]
 pub struct Nip05Relay {
@@ -22,21 +19,14 @@ pub struct Nip05Relay {
     pub relay_id: i64,
 }
 
-#[derive(Debug, Clone, Fields, FromRow, Serialize)]
-pub struct Nip05Relays {
-    pub pubkey: String,
-    pub name: String,
-    pub relays: Vec<String>,
-}
-
-#[derive(Debug, Clone, Fields, FromRow, Serialize)]
+#[derive(Debug, Clone, FromRow, Serialize, Deserialize)]
 pub struct Nip05RelaysForCreate {
     pub pubkey: String,
     pub name: String,
     pub relays: Vec<String>,
 }
 
-#[derive(Debug, Clone, Fields, FromRow, Serialize)]
+#[derive(Debug, Clone, FromRow, Serialize)]
 pub struct Nip05RelaysForUpdate {
     pub pubkey: Option<String>,
     pub name: Option<String>,
@@ -71,14 +61,10 @@ impl Nip05RelaysBmc {
         Ok(())
     }
 
-    async fn get_nip05_and_relays(
-        mm: &ModelManager,
-        field: &str,
-        value: &str,
-    ) -> Result<Nip05Relays> {
+    pub async fn get_by(mm: &ModelManager, field: NameOrPubkey, val: &str) -> Result<Nip05Relays> {
         let db = mm.db();
 
-        let nip05: Nip05 = Nip05Bmc::get_by(mm, field.to_string(), value.to_string()).await?;
+        let nip05: Nip05 = Nip05Bmc::get_by(mm, field, val).await?;
         let nip05relay: Vec<Nip05Relay> =
             sqlb::select()
                 .table(Self::TABLE)
@@ -104,12 +90,5 @@ impl Nip05RelaysBmc {
         };
 
         Ok(nip05relays)
-    }
-
-    pub async fn get_by(mm: &ModelManager, col: NameOrPubkey, val: String) -> Result<Nip05Relays> {
-        match col {
-            NameOrPubkey::Name => Ok(Self::get_nip05_and_relays(mm, "name", &val).await?),
-            NameOrPubkey::Pubkey => Ok(Self::get_nip05_and_relays(mm, "pubkey", &val).await?),
-        }
     }
 }
