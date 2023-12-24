@@ -7,10 +7,9 @@ use axum::{
     Json,
 };
 use axum_macros::debug_handler;
-use fedimint_client::oplog::UpdateStreamOrOutcome;
+use fedimint_core::task::spawn;
 use fedimint_core::{core::OperationId, Amount};
-use fedimint_ln_client::LightningClientModule;
-use tokio::sync::oneshot;
+use fedimint_ln_client::{LightningClientModule, LnReceiveState};
 use tracing::{error, info};
 
 use crate::{
@@ -128,7 +127,6 @@ pub async fn lnurlp_callback(
             status: StatusCode::NOT_FOUND,
         });
     }
-
     if params.amount < 1000 {
         return Err(AppError {
             error: anyhow::anyhow!("Amount too low"),
@@ -136,19 +134,44 @@ pub async fn lnurlp_callback(
         });
     }
 
-    let (op_id, pr) =
-        state
-            .fm_client
-            .get_first_module::<LightningClientModule>()
-            .create_bolt11_invoice(
-                Amount {
-                    msats: params.amount,
-                },
-                "test invoice".to_string(),
-                None,
-                (),
-            )
-            .await?;
+    let ln = state.fm_client.get_first_module::<LightningClientModule>();
+
+    let (op_id, pr) = ln
+        .create_bolt11_invoice(
+            Amount {
+                msats: params.amount,
+            },
+            "test invoice".to_string(),
+            None,
+            (),
+        )
+        .await?;
+
+    // create subscription to operation
+    let subscription = ln
+        .subscribe_ln_receive(op_id)
+        .await
+        .expect("subscribing to a just created operation can't fail");
+
+    // spawn a task to wait for the operation to be updated
+    spawn("waiting for invoice being paid", async move {
+        let mut stream = subscription.into_stream();
+        while let Some(op_state) = stream.next().await {
+            match op_state {
+                LnReceiveState::WaitingForPayment { invoice, timeout } => {
+                    info!(
+                        "Waiting for payment for invoice: {}, timeout: {:?}",
+                        invoice, timeout
+                    );
+                }
+                LnReceiveState::Claimed => {
+                    info!("Payment claimed");
+                    break;
+                }
+                _ => {}
+            }
+        }
+    });
 
     let verify_url = format!(
         "http://localhost:3000/lnurlp/{}/verify/{}",
@@ -170,42 +193,10 @@ pub async fn lnurlp_callback(
 
 #[axum_macros::debug_handler]
 pub async fn lnurlp_verify(
-    Path(params): Path<(String, OperationId)>,
-    State(state): State<AppState>,
+    Path(_params): Path<(String, OperationId)>,
+    State(_state): State<AppState>,
 ) -> Result<Json<bool>, AppError> {
-    let (_username, operation_id) = params;
-    let subscription = state
-        .fm_client
-        .get_first_module::<LightningClientModule>()
-        .subscribe_ln_receive(operation_id)
-        .await
-        .expect("subscribing to a just created operation can't fail");
-
-    match subscription {
-        UpdateStreamOrOutcome::UpdateStream(stream) => {
-            let (tx, rx) = oneshot::channel();
-            tokio::spawn(async move {
-                let mut stream = stream.fuse();
-                tokio::select! {
-                    _ = stream.next() => {
-                        tx.send(true).unwrap();
-                    }
-                    _ = tokio::time::sleep(std::time::Duration::from_secs(10)) => {
-                        tx.send(false).unwrap();
-                    }
-                }
-            });
-            info!("waiting for stream to complete");
-            let res = rx.await.unwrap();
-            return Ok(Json(res));
-        }
-        UpdateStreamOrOutcome::Outcome(outcome) => {
-            return Err(AppError {
-                error: anyhow::anyhow!("Operation status: {:?}", outcome),
-                status: StatusCode::BAD_REQUEST,
-            });
-        }
-    }
+    todo!();
 }
 
 // let client = nostr_sdk::Client::new(&Keys::generate());
