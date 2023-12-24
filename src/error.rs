@@ -8,6 +8,15 @@ pub struct AppError {
     pub status: StatusCode,
 }
 
+impl AppError {
+    pub fn new(status: StatusCode, error: impl Into<anyhow::Error>) -> Self {
+        Self {
+            error: error.into(),
+            status,
+        }
+    }
+}
+
 // Tell axum how to convert `AppError` into a response.
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {

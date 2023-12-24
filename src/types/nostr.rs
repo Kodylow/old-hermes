@@ -11,6 +11,13 @@ pub struct Nip05Relays {
     pub relays: Vec<String>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Nip05Params {
+    pub pubkey: String,
+    pub name: String,
+    pub relays: Option<Vec<String>>,
+}
+
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Nip05WellKnownParams {
     pub name: String,

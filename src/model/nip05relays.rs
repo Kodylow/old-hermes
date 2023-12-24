@@ -47,6 +47,7 @@ impl Nip05RelaysBmc {
             name: nip05relays_c.name,
         };
         let nip05_id = base::create::<Self, _>(&mm, nip05_c).await?;
+
         for relay in nip05relays_c.relays {
             let relay_c = RelayForCreate { relay };
             let relay_id = base::create::<Self, _>(&mm, relay_c).await?;

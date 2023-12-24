@@ -11,7 +11,7 @@ mod types;
 mod utils;
 use state::{load_fedimint_client, AppState};
 
-use crate::model::ModelManager;
+use crate::{model::ModelManager, state::load_nostr_client};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -20,6 +20,7 @@ async fn main() -> Result<()> {
     let state = AppState {
         fm: load_fedimint_client().await?,
         mm: ModelManager::new().await?,
+        nostr: load_nostr_client().await?,
     };
 
     let app = router::create_router(state).await?;

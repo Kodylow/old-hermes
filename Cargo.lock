@@ -1274,36 +1274,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "proteus"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "async-utility",
- "axum",
- "axum-macros",
- "dotenv",
- "fedimint",
- "fedimint-client",
- "fedimint-core",
- "fedimint-ln-client",
- "fedimint-mint-client",
- "fedimint-rocksdb",
- "fedimint-wallet-client",
- "futures",
- "lazy_static",
- "nostr",
- "nostr-sdk",
- "serde",
- "serde_json",
- "sqlb",
- "sqlx",
- "tokio",
- "tracing",
- "tracing-subscriber",
- "url",
-]
-
-[[package]]
 name = "ff"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2751,6 +2721,36 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39278fbbf5fb4f646ce651690877f89d1c5811a3d4acb27700c1cb3cdb78fd3b"
 dependencies = [
  "unicode-ident",
+]
+
+[[package]]
+name = "proteus"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-utility",
+ "axum",
+ "axum-macros",
+ "dotenv",
+ "fedimint",
+ "fedimint-client",
+ "fedimint-core",
+ "fedimint-ln-client",
+ "fedimint-mint-client",
+ "fedimint-rocksdb",
+ "fedimint-wallet-client",
+ "futures",
+ "lazy_static",
+ "nostr",
+ "nostr-sdk",
+ "serde",
+ "serde_json",
+ "sqlb",
+ "sqlx",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "url",
 ]
 
 [[package]]

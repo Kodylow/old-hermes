@@ -26,26 +26,3 @@ pub async fn nip05_well_known(
 
     Ok(Json(nip05_well_known))
 }
-
-// let client = nostr_sdk::Client::new(&Keys::generate());
-//     client.add_relay("wss://relay.damus.io", None).await?;
-//     client
-//         .add_relay("wss://nostr.mutinywallet.com", None)
-//         .await?;
-//     client.connect().await;
-
-//     let filter = Filter::new()
-//         .kind(Kind::Metadata)
-//         .author(params.nostr_pubkey)
-//         .limit(1);
-
-//     let events = client.get_events_of(vec![filter], None).await?;
-
-//     if let Some(event) = events.first() {
-//         let metadata: Metadata = serde_json::from_str(&event.content)?;
-//         println!("nip5: {:?}", metadata.nip05);
-//     }
-
-//     client
-//         .send_direct_msg(params.nostr_pubkey, "connected!".to_string(), None)
-//         .await?;
