@@ -1,4 +1,4 @@
-![Alt text](assets/hermes_nostrich.png)
+<img src="assets/hermes_nostrich.png" width="500">
 
 # Hermes: A Noncustodial Lightning Address Messenger w/Fedimint
 
