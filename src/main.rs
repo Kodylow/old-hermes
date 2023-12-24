@@ -3,9 +3,9 @@ use tracing::info;
 
 mod config;
 mod error;
-mod models;
 mod router;
 mod state;
+mod types;
 
 mod utils;
 use state::{get_nostr_json, load_fedimint_client, AppState};

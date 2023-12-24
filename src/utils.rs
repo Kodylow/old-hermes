@@ -6,7 +6,7 @@ use std::collections::HashMap;
 
 use crate::{
     error::AppError,
-    models::nostr::{Nip05WellKnown, Nip05WellKnownParams},
+    types::nostr::{Nip05WellKnown, Nip05WellKnownParams},
 };
 use axum::http::StatusCode;
 

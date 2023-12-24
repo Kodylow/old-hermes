@@ -12,10 +12,10 @@ use tracing::{error, info};
 use crate::{
     config::CONFIG,
     error::AppError,
-    models::lnurl::{
+    state::AppState,
+    types::lnurl::{
         LnurlCallbackParams, LnurlCallbackResponse, LnurlStatus, LnurlType, LnurlWellKnownResponse,
     },
-    state::AppState,
 };
 
 #[axum_macros::debug_handler]

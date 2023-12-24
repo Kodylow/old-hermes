@@ -2,7 +2,7 @@ use std::fs::read_to_string;
 
 use fedimint_client::ClientArc;
 
-use crate::{config, models::nostr::Nip05WellKnown};
+use crate::{config, types::nostr::Nip05WellKnown};
 
 use anyhow::Result;
 use config::CONFIG;

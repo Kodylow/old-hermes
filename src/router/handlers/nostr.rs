@@ -6,8 +6,8 @@ use tracing::info;
 
 use crate::{
     error::AppError,
-    models::nostr::{Nip05WellKnown, Nip05WellKnownParams},
     state::AppState,
+    types::nostr::{Nip05WellKnown, Nip05WellKnownParams},
     utils::get_pubkey_and_relays,
 };
 
