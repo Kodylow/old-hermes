@@ -38,8 +38,8 @@ impl RelayBmc {
         base::get::<Self, _>(mm, id).await
     }
 
-    pub async fn get_all(mm: &ModelManager) -> Result<Vec<Relay>> {
-        base::get_all::<Self, _>(mm).await
+    pub async fn get_many(mm: &ModelManager, ids: &[i64]) -> Result<Vec<Relay>> {
+        base::get_many::<Self, _>(mm, ids).await
     }
 
     pub async fn list(mm: &ModelManager) -> Result<Vec<Relay>> {

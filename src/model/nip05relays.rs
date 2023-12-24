@@ -1,13 +1,20 @@
 use super::{
     base::{self, DbBmc},
-    nip05::{Nip05, Nip05ForCreate},
-    relay::{Relay, RelayForCreate},
+    nip05::{Nip05, Nip05Bmc, Nip05ForCreate},
+    relay::{RelayBmc, RelayForCreate},
     ModelManager,
 };
-use anyhow::{anyhow, Result};
+use anyhow::Result;
+use futures::stream::StreamExt;
 use serde::Serialize;
 use sqlb::Fields;
+use sqlb::HasFields;
 use sqlx::FromRow;
+
+pub enum NameOrPubkey {
+    Name,
+    Pubkey,
+}
 
 #[derive(Debug, Clone, Fields, FromRow, Serialize)]
 pub struct Nip05Relay {
@@ -64,23 +71,28 @@ impl Nip05RelaysBmc {
         Ok(())
     }
 
-    pub async fn get_by_name(mm: &ModelManager, name: String) -> Result<Nip05Relays> {
+    async fn get_nip05_and_relays(
+        mm: &ModelManager,
+        field: &str,
+        value: &str,
+    ) -> Result<Nip05Relays> {
         let db = mm.db();
 
-        let nip05: Nip05 = sqlb::select()
-            .table("nip05")
-            .and_where("name", "=", &name)
-            .fetch_optional(db)
-            .await?
-            .ok_or(anyhow!("Nip05 not found in table 'nip05', name: {}", name))?;
-
-        let relays: Vec<Relay> =
+        let nip05: Nip05 = Nip05Bmc::get_by(mm, field.to_string(), value.to_string()).await?;
+        let nip05relay: Vec<Nip05Relay> =
             sqlb::select()
-                .table("nip05relays")
-                .columns(&["relay_id"])
+                .table(Self::TABLE)
+                .columns(Nip05Relay::field_names())
                 .and_where("nip05_id", "=", nip05.id)
                 .fetch_all(db)
                 .await?;
+
+        let relay_ids: Vec<i64> = nip05relay
+            .into_iter()
+            .map(|nip05relay| nip05relay.relay_id)
+            .collect();
+
+        let relays = RelayBmc::get_many(mm, &relay_ids).await?;
 
         let nip05relays = Nip05Relays {
             pubkey: nip05.pubkey,
@@ -92,5 +104,12 @@ impl Nip05RelaysBmc {
         };
 
         Ok(nip05relays)
+    }
+
+    pub async fn get_by(mm: &ModelManager, col: NameOrPubkey, val: String) -> Result<Nip05Relays> {
+        match col {
+            NameOrPubkey::Name => Ok(Self::get_nip05_and_relays(mm, "name", &val).await?),
+            NameOrPubkey::Pubkey => Ok(Self::get_nip05_and_relays(mm, "pubkey", &val).await?),
+        }
     }
 }
