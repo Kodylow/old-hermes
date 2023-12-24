@@ -27,3 +27,10 @@ nostr = "0.26.0"
 nostr-sdk = "0.26.0"
 lazy_static = "1.4.0"
 async-utility = "0.1.1"
+sqlx = { version = "0.7.3", features = [
+    "postgres",
+    "runtime-tokio-rustls",
+    "uuid",
+    "time",
+] }
+sqlb = "0.4.0"

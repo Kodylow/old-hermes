@@ -15,7 +15,8 @@ lazy_static::lazy_static! {
 pub struct Config {
     pub invite_code: InviteCode,
     pub root_secret: DerivableSecret,
-    pub db_path: PathBuf,
+    pub fm_db_path: PathBuf,
+    pub pg_url: String,
     pub domain: Url,
 }
 
@@ -23,8 +24,8 @@ impl Config {
     pub fn from_env() -> Result<Self, env::VarError> {
         dotenv::dotenv().ok();
 
-        let db_path = env::var("DB_PATH").expect("DB_PATH must be set");
-        let db_path = PathBuf::from_str(&db_path).expect("Invalid db path");
+        let fm_db_path = env::var("FM_DB_PATH").expect("FM_DB_PATH must be set");
+        let fm_db_path = PathBuf::from_str(&fm_db_path).expect("Invalid fm db path");
 
         let invite_code =
             env::var("FEDERATION_INVITE_CODE").expect("FEDERATION_INVITE_CODE must be set");
@@ -36,12 +37,15 @@ impl Config {
         let domain = env::var("DOMAIN").unwrap_or("localhost:3000".to_string());
         let domain = Url::parse(&domain).expect("Invalid domain");
 
+        let pg_url = env::var("PG_URL").expect("PG_URL must be set");
+
         info!("Loaded config");
 
         Ok(Self {
             invite_code,
             root_secret,
-            db_path,
+            fm_db_path,
+            pg_url,
             domain,
         })
     }

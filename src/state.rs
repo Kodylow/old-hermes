@@ -2,7 +2,7 @@ use std::fs::read_to_string;
 
 use fedimint_client::ClientArc;
 
-use crate::{config, types::nostr::Nip05WellKnown};
+use crate::{config, model::ModelManager, types::nostr::Nip05WellKnown};
 
 use anyhow::Result;
 use config::CONFIG;
@@ -14,15 +14,16 @@ use fedimint_wallet_client::WalletClientInit;
 
 #[derive(Debug, Clone)]
 pub struct AppState {
-    pub fm_client: ClientArc,
-    pub nostr_json: Nip05WellKnown,
+    pub fm: ClientArc,
+    pub mm: ModelManager,
 }
 
 pub async fn load_fedimint_client() -> Result<ClientArc> {
-    let db = Database::new(
-        fedimint_rocksdb::RocksDb::open(CONFIG.db_path.clone())?,
-        Default::default(),
-    );
+    let db =
+        Database::new(
+            fedimint_rocksdb::RocksDb::open(CONFIG.fm_db_path.clone())?,
+            Default::default(),
+        );
     let mut client_builder = fedimint_client::Client::builder();
     if get_config_from_db(&db).await.is_none() {
         let federation_info = FederationInfo::from_invite_code(CONFIG.invite_code.clone()).await?;

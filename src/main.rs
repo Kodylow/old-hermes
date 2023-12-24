@@ -3,20 +3,23 @@ use tracing::info;
 
 mod config;
 mod error;
+mod model;
 mod router;
 mod state;
 mod types;
 
 mod utils;
-use state::{get_nostr_json, load_fedimint_client, AppState};
+use state::{load_fedimint_client, AppState};
+
+use crate::model::ModelManager;
 
 #[tokio::main]
 async fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
 
     let state = AppState {
-        fm_client: load_fedimint_client().await?,
-        nostr_json: get_nostr_json(),
+        fm: load_fedimint_client().await?,
+        mm: ModelManager::new().await?,
     };
 
     let app = router::create_router(state).await?;
