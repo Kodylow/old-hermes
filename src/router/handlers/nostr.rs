@@ -1,4 +1,5 @@
 use crate::{
+    config::CONFIG,
     error::AppError,
     model::nip05relays::Nip05RelaysForCreate,
     state::AppState,
@@ -37,10 +38,9 @@ pub async fn register(
 ) -> Result<Json<bool>, AppError> {
     info!("register called with pubkey: {:?}", params.pubkey);
 
-    let relays = match params.relays {
-        Some(relays) => relays,
-        None => vec!["wss://nostr.mutinywallet.com".to_string()],
-    };
+    let relays = params
+        .relays
+        .unwrap_or_else(|| vec![CONFIG.default_relay.clone()]);
 
     let nip05relays_c = Nip05RelaysForCreate {
         pubkey: params.pubkey,

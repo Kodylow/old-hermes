@@ -13,16 +13,24 @@ lazy_static::lazy_static! {
 }
 
 pub struct Config {
+    pub domain: Url,
+    pub port: u16,
     pub invite_code: InviteCode,
     pub root_secret: DerivableSecret,
     pub fm_db_path: PathBuf,
     pub pg_db: String,
-    pub domain: Url,
+    pub default_relay: String,
 }
 
 impl Config {
     pub fn from_env() -> Result<Self, env::VarError> {
         dotenv::dotenv().ok();
+
+        let domain = env::var("DOMAIN").unwrap_or("localhost".to_string());
+        let domain = Url::parse(&domain).expect("Invalid domain");
+
+        let port = env::var("PORT").unwrap_or("3000".to_string());
+        let port = u16::from_str(&port).expect("Invalid port");
 
         let fm_db_path = env::var("FM_DB_PATH").expect("FM_DB_PATH must be set");
         let fm_db_path = PathBuf::from_str(&fm_db_path).expect("Invalid fm db path");
@@ -34,19 +42,20 @@ impl Config {
         let secret = env::var("SECRET_KEY").expect("SECRET_KEY must be set");
         let root_secret = create_root_secret(secret);
 
-        let domain = env::var("DOMAIN").unwrap_or("localhost:3000".to_string());
-        let domain = Url::parse(&domain).expect("Invalid domain");
-
         let pg_db = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+
+        let default_relay = env::var("DEFAULT_RELAY").expect("DEFAULT_RELAY must be set");
 
         info!("Loaded config");
 
         Ok(Self {
+            domain,
+            port,
             invite_code,
             root_secret,
             fm_db_path,
             pg_db,
-            domain,
+            default_relay,
         })
     }
 }
