@@ -1,4 +1,5 @@
 mod base;
+pub mod invoice;
 pub mod nip05;
 pub mod nip05relays;
 pub mod relay;
