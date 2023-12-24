@@ -11,7 +11,7 @@ mod types;
 mod utils;
 use state::{load_fedimint_client, AppState};
 
-use crate::{model::ModelManager, state::load_nostr_client};
+use crate::{config::CONFIG, model::ModelManager, state::load_nostr_client};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -25,8 +25,10 @@ async fn main() -> Result<()> {
 
     let app = router::create_router(state).await?;
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
-    info!("Listening on 0.0.0.0:3000");
+    let listener = tokio::net::TcpListener::bind(format!("{}:{}", CONFIG.domain, CONFIG.port))
+        .await
+        .unwrap();
+    info!("Listening on {}", CONFIG.port);
     axum::serve(listener, app).await.unwrap();
 
     Ok(())
