@@ -18,3 +18,14 @@
     ]
   }
 }
+
+{
+  "names": {
+    "kody": "de8823cdc979bf4c753223edc19a7abc35ecff2959ef50ca9e9d573ac0f83fd0",
+  },
+  "relays": {
+    "de8823cdc979bf4c753223edc19a7abc35ecff2959ef50ca9e9d573ac0f83fd0": [
+      "wss://nostr.mutinywallet.com"
+    ]
+  }
+}

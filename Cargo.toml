@@ -34,3 +34,4 @@ sqlx = { version = "0.7.3", features = [
     "time",
 ] }
 sqlb = "0.4.0"
+futures = "0.3.30"
