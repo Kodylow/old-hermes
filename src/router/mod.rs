@@ -6,11 +6,10 @@ use axum::{
 pub mod handlers;
 pub mod state;
 
-use crate::utils::get_nostr_json;
 use handlers::*;
 use state::AppState;
 
-use self::state::load_fedimint_client;
+use self::state::{get_nostr_json, load_fedimint_client};
 
 pub async fn create_router() -> Result<Router> {
     let state = AppState {

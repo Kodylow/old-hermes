@@ -1,3 +1,5 @@
+use std::fs::read_to_string;
+
 use fedimint_client::ClientArc;
 
 use crate::{config, models::nostr::Nip05WellKnown};
@@ -9,6 +11,12 @@ use fedimint_core::db::Database;
 use fedimint_ln_client::LightningClientInit;
 use fedimint_mint_client::MintClientInit;
 use fedimint_wallet_client::WalletClientInit;
+
+#[derive(Debug, Clone)]
+pub struct AppState {
+    pub fm_client: ClientArc,
+    pub nostr_json: Nip05WellKnown,
+}
 
 pub async fn load_fedimint_client() -> Result<ClientArc> {
     let db = Database::new(
@@ -30,8 +38,7 @@ pub async fn load_fedimint_client() -> Result<ClientArc> {
     Ok(client_res)
 }
 
-#[derive(Debug, Clone)]
-pub struct AppState {
-    pub fm_client: ClientArc,
-    pub nostr_json: Nip05WellKnown,
+pub fn get_nostr_json() -> Nip05WellKnown {
+    let nostr_str = read_to_string("nostr.json").expect("Could not read nostr.json");
+    serde_json::from_str::<Nip05WellKnown>(&nostr_str).expect("Invalid nostr.json")
 }
