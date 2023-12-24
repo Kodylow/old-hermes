@@ -16,7 +16,7 @@ pub struct Config {
     pub invite_code: InviteCode,
     pub root_secret: DerivableSecret,
     pub fm_db_path: PathBuf,
-    pub DATABASE_URL: String,
+    pub pg_db: String,
     pub domain: Url,
 }
 
@@ -37,7 +37,7 @@ impl Config {
         let domain = env::var("DOMAIN").unwrap_or("localhost:3000".to_string());
         let domain = Url::parse(&domain).expect("Invalid domain");
 
-        let DATABASE_URL = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+        let pg_db = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
 
         info!("Loaded config");
 
@@ -45,7 +45,7 @@ impl Config {
             invite_code,
             root_secret,
             fm_db_path,
-            DATABASE_URL,
+            pg_db,
             domain,
         })
     }

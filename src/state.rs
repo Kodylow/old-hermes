@@ -1,8 +1,6 @@
-use std::fs::read_to_string;
-
 use fedimint_client::ClientArc;
 
-use crate::{config, model::ModelManager, types::nostr::Nip05WellKnown};
+use crate::{config, model::ModelManager};
 
 use anyhow::Result;
 use config::CONFIG;
@@ -37,9 +35,4 @@ pub async fn load_fedimint_client() -> Result<ClientArc> {
     let client_res = client_builder.build(CONFIG.root_secret.clone()).await?;
 
     Ok(client_res)
-}
-
-pub fn get_nostr_json() -> Nip05WellKnown {
-    let nostr_str = read_to_string("nostr.json").expect("Could not read nostr.json");
-    serde_json::from_str::<Nip05WellKnown>(&nostr_str).expect("Invalid nostr.json")
 }

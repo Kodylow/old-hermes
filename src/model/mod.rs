@@ -7,11 +7,6 @@ mod store;
 use crate::model::store::{new_db_pool, Db};
 use anyhow::Result;
 
-pub enum NameOrPubkey {
-    Name,
-    Pubkey,
-}
-
 #[derive(Clone, Debug)]
 pub struct ModelManager {
     db: Db,

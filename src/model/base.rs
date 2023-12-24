@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use crate::model::ModelManager;
 use anyhow::{anyhow, Result};
 use sqlb::HasFields;
