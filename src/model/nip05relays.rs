@@ -1,4 +1,4 @@
-use crate::types::nostr::Nip05Relays;
+use crate::router::handlers::{nostr::Nip05Relays, NameOrPubkey};
 
 use super::{
     base::{self, DbBmc},
@@ -6,7 +6,7 @@ use super::{
     relay::{RelayBmc, RelayForCreate},
     ModelManager,
 };
-use crate::types::NameOrPubkey;
+
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use sqlb::Fields;

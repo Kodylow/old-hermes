@@ -1,9 +1,10 @@
 #![allow(dead_code)]
+use crate::router::handlers::NameOrPubkey;
+
 use super::{
     base::{self, DbBmc},
     ModelManager,
 };
-use crate::types::NameOrPubkey;
 use anyhow::{anyhow, Result};
 use serde::Serialize;
 use sqlb::Fields;

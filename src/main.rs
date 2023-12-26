@@ -6,7 +6,6 @@ mod error;
 mod model;
 mod router;
 mod state;
-mod types;
 
 mod utils;
 use state::{load_fedimint_client, AppState};
