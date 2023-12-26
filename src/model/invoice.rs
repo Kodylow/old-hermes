@@ -38,7 +38,6 @@ impl DbBmc for InvoiceBmc {
 
 impl InvoiceBmc {
     pub async fn create(mm: &ModelManager, inv_c: InvoiceForCreate) -> Result<i32> {
-        info!("create called with inv_c: {:?}", inv_c);
         base::create::<Self, _>(mm, inv_c).await
     }
 
@@ -47,7 +46,6 @@ impl InvoiceBmc {
     }
 
     pub async fn get_by_op_id(mm: &ModelManager, op_id: &str) -> Result<Invoice> {
-        info!("get_by_op_id called with op_id: {}", op_id);
         let inv: Invoice = sqlb::select()
             .table(Self::TABLE)
             .columns(Invoice::field_names())

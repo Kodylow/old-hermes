@@ -1,8 +1,8 @@
 -- Up
 CREATE TABLE nip05 (
     id SERIAL PRIMARY KEY,
-    pubkey VARCHAR(255) NOT NULL,
-    name VARCHAR(255) NOT NULL
+    pubkey VARCHAR(65) NOT NULL,
+    name VARCHAR(20) NOT NULL
 );
 CREATE TABLE relay (
     id SERIAL PRIMARY KEY,
@@ -15,8 +15,8 @@ CREATE TABLE nip05relays (
 );
 CREATE TABLE invoice (
     id SERIAL PRIMARY KEY,
-    op_id VARCHAR(255) NOT NULL,
-    bolt11 VARCHAR(255) NOT NULL,
+    op_id VARCHAR(64) NOT NULL,
+    bolt11 VARCHAR(2048) NOT NULL,
     amount INTEGER NOT NULL,
     settled BOOLEAN NOT NULL DEFAULT FALSE
 );
