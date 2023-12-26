@@ -1,13 +1,15 @@
 use std::{str::FromStr, time::Duration};
 
+use anyhow::Result;
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
     Json,
 };
 use fedimint_client::oplog::UpdateStreamOrOutcome;
-use fedimint_core::{task::spawn, Amount};
+use fedimint_core::{core::OperationId, task::spawn, Amount};
 use fedimint_ln_client::{LightningClientModule, LnReceiveState};
+use fedimint_mint_client::{MintClientModule, OOBNotes};
 use futures::StreamExt;
 use nostr::secp256k1::XOnlyPublicKey;
 use serde::{Deserialize, Serialize};
@@ -162,43 +164,37 @@ async fn settle_invoice_and_notify_user(
     id: i64,
     nip05relays: Nip05Relays,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let invoice = InvoiceBmc::settle(&state.mm, id)
+    let invoice = InvoiceBmc::settle(&state.mm, id).await?;
+    let (operation_id, notes) = get_notes(&state, invoice.amount as u64).await?;
+    send_nostr_dm(&state, &nip05relays, operation_id, invoice.amount, notes).await?;
+    Ok(())
+}
+
+async fn get_notes(state: &AppState, amount: u64) -> Result<(OperationId, OOBNotes)> {
+    let mint = state.fm.get_first_module::<MintClientModule>();
+    mint.spend_notes(Amount::from_msats(amount), Duration::from_secs(604800), ())
         .await
-        .expect("settling invoice can't fail");
+}
 
-    // Get notes of equivalent amount from invoice
-    let mint = state
-        .fm
-        .get_first_module::<fedimint_mint_client::MintClientModule>();
-    let (operation_id, notes) = mint
-        .spend_notes(
-            Amount::from_msats(invoice.amount as u64),
-            Duration::from_secs(604800),
-            (),
-        )
-        .await?;
-
-    // Send nostr DM to user with operationId and notes
-    for relay in &nip05relays.relays {
-        let url = Url::from_str(&relay).expect("relay url is valid");
-        state.nostr.connect_relay(url.to_string()).await?;
-    }
-
+async fn send_nostr_dm(
+    state: &AppState,
+    nip05relays: &Nip05Relays,
+    operation_id: OperationId,
+    amount: i64,
+    notes: OOBNotes,
+) -> Result<(), Box<dyn std::error::Error>> {
     state
         .nostr
         .send_direct_msg(
             XOnlyPublicKey::from_str(&nip05relays.pubkey).unwrap(),
             json!({
-                "operationId": operation_id.to_string(),
-                "amount": invoice.amount,
-                "notes": notes,
+                "operationId": operation_id,
+                "amount": amount,
+                "notes": notes.to_string(),
             })
             .to_string(),
             None,
         )
         .await?;
-
-    state.nostr.disconnect().await?;
-
     Ok(())
 }
