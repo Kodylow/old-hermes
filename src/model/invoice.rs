@@ -14,6 +14,7 @@ pub struct Invoice {
     pub id: i64,
     pub op_id: String,
     pub bolt11: String,
+    pub amount: i64,
     pub settled: bool,
 }
 
@@ -21,6 +22,7 @@ pub struct Invoice {
 pub struct InvoiceForCreate {
     pub op_id: String,
     pub bolt11: String,
+    pub amount: i64,
 }
 
 #[derive(Debug, Clone, Fields, FromRow, Serialize)]
@@ -39,6 +41,10 @@ impl InvoiceBmc {
         base::create::<Self, _>(mm, inv_c).await
     }
 
+    pub async fn get(mm: &ModelManager, id: i64) -> Result<Invoice> {
+        base::get::<Self, _>(mm, id).await
+    }
+
     pub async fn get_by_op_id(mm: &ModelManager, op_id: &str) -> Result<Invoice> {
         info!("get_by_op_id called with op_id: {}", op_id);
         let inv: Invoice = sqlb::select()
@@ -51,9 +57,10 @@ impl InvoiceBmc {
         Ok(inv)
     }
 
-    pub async fn settle(mm: &ModelManager, id: i64) -> Result<()> {
+    pub async fn settle(mm: &ModelManager, id: i64) -> Result<Invoice> {
         let inv_u = InvoiceForUpdate { settled: true };
-        base::update::<Self, _>(mm, id, inv_u).await
+        base::update::<Self, _>(mm, id, inv_u).await?;
+        Self::get(mm, id).await
     }
 
     pub async fn delete(mm: &ModelManager, id: i64) -> Result<()> {

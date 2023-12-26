@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{str::FromStr, time::Duration};
 
 use axum::{
     extract::{Path, Query, State},
@@ -11,6 +11,7 @@ use fedimint_ln_client::{LightningClientModule, LnReceiveState};
 use futures::StreamExt;
 use nostr::secp256k1::XOnlyPublicKey;
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 use tracing::{error, info};
 use url::Url;
 
@@ -91,15 +92,15 @@ pub async fn handle_callback(
         .await?;
 
     // insert invoice into db for later verification
-    let id =
-        InvoiceBmc::create(
-            &state.mm,
-            InvoiceForCreate {
-                op_id: op_id.to_string(),
-                bolt11: pr.to_string(),
-            },
-        )
-        .await?;
+    let id = InvoiceBmc::create(
+        &state.mm,
+        InvoiceForCreate {
+            op_id: op_id.to_string(),
+            amount: params.amount as i64,
+            bolt11: pr.to_string(),
+        },
+    )
+    .await?;
 
     // create subscription to operation
     let subscription = ln
@@ -161,11 +162,23 @@ async fn settle_invoice_and_notify_user(
     id: i64,
     nip05relays: Nip05Relays,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    InvoiceBmc::settle(&state.mm, id)
+    let invoice = InvoiceBmc::settle(&state.mm, id)
         .await
         .expect("settling invoice can't fail");
 
-    // Send nostr DM to user
+    // Get notes of equivalent amount from invoice
+    let mint = state
+        .fm
+        .get_first_module::<fedimint_mint_client::MintClientModule>();
+    let (operation_id, notes) = mint
+        .spend_notes(
+            Amount::from_msats(invoice.amount as u64),
+            Duration::from_secs(604800),
+            (),
+        )
+        .await?;
+
+    // Send nostr DM to user with operationId and notes
     for relay in &nip05relays.relays {
         let url = Url::from_str(&relay).expect("relay url is valid");
         state.nostr.connect_relay(url.to_string()).await?;
@@ -175,7 +188,12 @@ async fn settle_invoice_and_notify_user(
         .nostr
         .send_direct_msg(
             XOnlyPublicKey::from_str(&nip05relays.pubkey).unwrap(),
-            "connected!".to_string(),
+            json!({
+                "operationId": operation_id.to_string(),
+                "amount": invoice.amount,
+                "notes": notes,
+            })
+            .to_string(),
             None,
         )
         .await?;
