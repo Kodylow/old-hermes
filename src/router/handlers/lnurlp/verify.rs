@@ -1,10 +1,8 @@
-use std::str::FromStr;
-
 use axum::{
     extract::{Path, State},
     Json,
 };
-use fedimint_core::core::OperationId;
+
 use serde::{Deserialize, Serialize};
 use tracing::info;
 
