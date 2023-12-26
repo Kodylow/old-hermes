@@ -77,7 +77,6 @@ where
         .order_by("id")
         .fetch_all(db)
         .await?;
-
     Ok(entities)
 }
 

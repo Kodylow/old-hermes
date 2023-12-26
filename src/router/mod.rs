@@ -28,7 +28,7 @@ pub async fn create_router(state: AppState) -> Result<Router> {
                 get(lnurlp::callback::handle_callback),
             )
             .route(
-                "/lnurlp/:username/verify/:operation_id",
+                "/lnurlp/:username/verify/:op_id",
                 get(lnurlp::verify::handle_verify),
             )
             .with_state(state);

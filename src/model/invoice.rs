@@ -3,10 +3,11 @@ use super::{
     base::{self, DbBmc},
     ModelManager,
 };
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use serde::Serialize;
-use sqlb::Fields;
+use sqlb::{Fields, HasFields};
 use sqlx::FromRow;
+use tracing::info;
 
 #[derive(Debug, Clone, Fields, FromRow, Serialize)]
 pub struct Invoice {
@@ -17,13 +18,13 @@ pub struct Invoice {
 
 #[derive(Debug, Clone, Fields, FromRow, Serialize)]
 pub struct InvoiceForCreate {
-    pub id: i64,
+    pub op_id: String,
     pub bolt11: String,
 }
 
 #[derive(Debug, Clone, Fields, FromRow, Serialize)]
 pub struct InvoiceForUpdate {
-    pub id: i64,
+    pub op_id: String,
     pub settled: bool,
 }
 
@@ -38,12 +39,21 @@ impl InvoiceBmc {
         base::create::<Self, _>(mm, inv_c).await
     }
 
-    pub async fn get(mm: &ModelManager, id: i64) -> Result<Invoice> {
-        base::get::<Self, _>(mm, id.into()).await
+    pub async fn get_by_op_id(mm: &ModelManager, op_id: &str) -> Result<Invoice> {
+        info!("get_by_op_id called with op_id: {}", op_id);
+        let inv: Invoice = sqlb::select()
+            .table(Self::TABLE)
+            .columns(Invoice::field_names())
+            .and_where("op_id", "=", op_id)
+            .fetch_optional(mm.db())
+            .await?
+            .ok_or(anyhow!("No invoice found with op_id: {}", op_id))?;
+        Ok(inv)
     }
 
-    pub async fn update(mm: &ModelManager, inv_u: InvoiceForUpdate) -> Result<()> {
-        base::update::<Self, _>(mm, inv_u.id.into(), inv_u).await
+    pub async fn update_by_op_id(mm: &ModelManager, inv_u: InvoiceForUpdate) -> Result<()> {
+        let id: i64 = Self::get_by_op_id(mm, &inv_u.op_id).await?.id;
+        base::update::<Self, _>(mm, id, inv_u).await
     }
 
     pub async fn delete(mm: &ModelManager, id: i64) -> Result<()> {

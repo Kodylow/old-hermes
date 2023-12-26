@@ -31,13 +31,8 @@ pub async fn handle_verify(
         username, op_id
     );
 
-    let op_id = OperationId::from_str(&op_id)?;
-
-    // Convert the operation id to an integer for the database lookup
-    let invoice_id = op_id.to_string().parse::<i64>()?;
-
     // Use the operation id to look up the invoice
-    let invoice = InvoiceBmc::get(&state.mm, invoice_id).await?;
+    let invoice = InvoiceBmc::get_by_op_id(&state.mm, &op_id).await?;
 
     let verify_response = LnurlVerifyResponse {
         status: LnurlStatus::Ok,
