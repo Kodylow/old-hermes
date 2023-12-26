@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use axum::{
     extract::{Path, State},
     Json,
@@ -21,13 +23,15 @@ pub struct LnurlVerifyResponse {
 
 #[axum_macros::debug_handler]
 pub async fn handle_verify(
-    Path((username, op_id)): Path<(String, OperationId)>,
+    Path((username, op_id)): Path<(String, String)>,
     State(state): State<AppState>,
 ) -> Result<Json<LnurlVerifyResponse>, AppError> {
     info!(
         "verify called with username: {}, op_id: {}",
         username, op_id
     );
+
+    let op_id = OperationId::from_str(&op_id)?;
 
     // Convert the operation id to an integer for the database lookup
     let invoice_id = op_id.to_string().parse::<i64>()?;
