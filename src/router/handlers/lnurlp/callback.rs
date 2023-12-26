@@ -165,15 +165,16 @@ async fn settle_invoice_and_notify_user(
     nip05relays: Nip05Relays,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let invoice = InvoiceBmc::settle(&state.mm, id).await?;
-    let (operation_id, notes) = get_notes(&state, invoice.amount as u64).await?;
+    let mint = state.fm.get_first_module::<MintClientModule>();
+    let (operation_id, notes) = mint
+        .spend_notes(
+            Amount::from_msats(invoice.amount as u64),
+            Duration::from_secs(604800),
+            (),
+        )
+        .await?;
     send_nostr_dm(&state, &nip05relays, operation_id, invoice.amount, notes).await?;
     Ok(())
-}
-
-async fn get_notes(state: &AppState, amount: u64) -> Result<(OperationId, OOBNotes)> {
-    let mint = state.fm.get_first_module::<MintClientModule>();
-    mint.spend_notes(Amount::from_msats(amount), Duration::from_secs(604800), ())
-        .await
 }
 
 async fn send_nostr_dm(
