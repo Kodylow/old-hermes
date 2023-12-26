@@ -5,7 +5,6 @@ use std::env;
 use std::path::PathBuf;
 use std::str::FromStr;
 use tracing::info;
-use url::Url;
 
 lazy_static::lazy_static! {
     pub static ref CONFIG: Config =
@@ -13,7 +12,7 @@ lazy_static::lazy_static! {
 }
 
 pub struct Config {
-    pub domain: Url,
+    pub domain: String,
     pub port: u16,
     pub invite_code: InviteCode,
     pub root_secret: DerivableSecret,
@@ -27,7 +26,6 @@ impl Config {
         dotenv::dotenv().ok();
 
         let domain = env::var("DOMAIN").unwrap_or("localhost".to_string());
-        let domain = Url::parse(&domain).expect("Invalid domain");
 
         let port = env::var("PORT").unwrap_or("3000".to_string());
         let port = u16::from_str(&port).expect("Invalid port");
@@ -44,7 +42,8 @@ impl Config {
 
         let pg_db = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
 
-        let default_relay = env::var("DEFAULT_RELAY").expect("DEFAULT_RELAY must be set");
+        let default_relay =
+            env::var("DEFAULT_NOSTR_RELAY").expect("DEFAULT_NOSTR_RELAY must be set");
 
         info!("Loaded config");
 
