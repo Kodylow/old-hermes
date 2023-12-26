@@ -15,8 +15,8 @@ use sqlx::FromRow;
 
 #[derive(Debug, Clone, Fields, FromRow, Serialize)]
 pub struct Nip05Relay {
-    pub nip05_id: i64,
-    pub relay_id: i64,
+    pub nip05_id: i32,
+    pub relay_id: i32,
 }
 
 #[derive(Debug, Clone, FromRow, Serialize, Deserialize)]
@@ -74,7 +74,7 @@ impl Nip05RelaysBmc {
                 .fetch_all(db)
                 .await?;
 
-        let relay_ids: Vec<i64> = nip05relay
+        let relay_ids: Vec<i32> = nip05relay
             .into_iter()
             .map(|nip05relay| nip05relay.relay_id)
             .collect();

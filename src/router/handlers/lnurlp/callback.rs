@@ -134,7 +134,7 @@ pub async fn handle_callback(
 
 async fn spawn_invoice_subscription(
     state: AppState,
-    id: i64,
+    id: i32,
     nip05relays: Nip05Relays,
     subscription: UpdateStreamOrOutcome<LnReceiveState>,
 ) {
@@ -161,7 +161,7 @@ async fn spawn_invoice_subscription(
 
 async fn settle_invoice_and_notify_user(
     state: AppState,
-    id: i64,
+    id: i32,
     nip05relays: Nip05Relays,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let invoice = InvoiceBmc::settle(&state.mm, id).await?;

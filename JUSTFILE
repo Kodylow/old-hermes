@@ -5,7 +5,7 @@ db:
     docker compose up -d
 
 reset db:
-    docker compose down -v && docker compose up -d
+    docker compose down -v && docker compose up -d && just migrate && just seed
 
 migrate:
     cargo sqlx migrate run --database-url "postgres://postgres:postgres@localhost:5432/hermes"

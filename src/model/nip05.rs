@@ -13,7 +13,7 @@ use sqlx::FromRow;
 
 #[derive(Debug, Clone, Fields, FromRow, Serialize)]
 pub struct Nip05 {
-    pub id: i64,
+    pub id: i32,
     pub pubkey: String,
     pub name: String,
 }
@@ -37,11 +37,11 @@ impl DbBmc for Nip05Bmc {
 }
 
 impl Nip05Bmc {
-    pub async fn create(mm: &ModelManager, nip05_c: Nip05ForCreate) -> Result<i64> {
+    pub async fn create(mm: &ModelManager, nip05_c: Nip05ForCreate) -> Result<i32> {
         base::create::<Self, _>(mm, nip05_c).await
     }
 
-    pub async fn get(mm: &ModelManager, id: i64) -> Result<Nip05> {
+    pub async fn get(mm: &ModelManager, id: i32) -> Result<Nip05> {
         base::get::<Self, _>(mm, id).await
     }
 
@@ -71,11 +71,11 @@ impl Nip05Bmc {
         base::list::<Self, _>(mm).await
     }
 
-    pub async fn update(mm: &ModelManager, id: i64, nip05_u: Nip05ForUpdate) -> Result<()> {
+    pub async fn update(mm: &ModelManager, id: i32, nip05_u: Nip05ForUpdate) -> Result<()> {
         base::update::<Self, _>(mm, id, nip05_u).await
     }
 
-    pub async fn delete(mm: &ModelManager, id: i64) -> Result<()> {
+    pub async fn delete(mm: &ModelManager, id: i32) -> Result<()> {
         base::delete::<Self>(mm, id).await
     }
 }

@@ -42,9 +42,6 @@ pub async fn load_fedimint_client() -> Result<ClientArc> {
 
 pub async fn load_nostr_client() -> Result<Client> {
     let client = nostr_sdk::Client::new(&Keys::generate());
-    client.add_relay("wss://relay.damus.io").await?;
-    client.add_relay("wss://nostr.mutinywallet.com").await?;
-    client.connect().await;
 
     Ok(client)
 }

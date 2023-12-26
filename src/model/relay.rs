@@ -10,7 +10,7 @@ use sqlx::FromRow;
 
 #[derive(Debug, Clone, Fields, FromRow, Serialize)]
 pub struct Relay {
-    pub id: i64,
+    pub id: i32,
     pub relay: String,
 }
 
@@ -31,15 +31,15 @@ impl DbBmc for RelayBmc {
 }
 
 impl RelayBmc {
-    pub async fn create(mm: &ModelManager, relay_c: RelayForCreate) -> Result<i64> {
+    pub async fn create(mm: &ModelManager, relay_c: RelayForCreate) -> Result<i32> {
         base::create::<Self, _>(mm, relay_c).await
     }
 
-    pub async fn get(mm: &ModelManager, id: i64) -> Result<Relay> {
+    pub async fn get(mm: &ModelManager, id: i32) -> Result<Relay> {
         base::get::<Self, _>(mm, id).await
     }
 
-    pub async fn get_many(mm: &ModelManager, ids: &[i64]) -> Result<Vec<Relay>> {
+    pub async fn get_many(mm: &ModelManager, ids: &[i32]) -> Result<Vec<Relay>> {
         base::get_many::<Self, _>(mm, ids).await
     }
 
@@ -47,11 +47,11 @@ impl RelayBmc {
         base::list::<Self, _>(mm).await
     }
 
-    pub async fn update(mm: &ModelManager, id: i64, relay_u: RelayForUpdate) -> Result<()> {
+    pub async fn update(mm: &ModelManager, id: i32, relay_u: RelayForUpdate) -> Result<()> {
         base::update::<Self, _>(mm, id, relay_u).await
     }
 
-    pub async fn delete(mm: &ModelManager, id: i64) -> Result<()> {
+    pub async fn delete(mm: &ModelManager, id: i32) -> Result<()> {
         base::delete::<Self>(mm, id).await
     }
 }

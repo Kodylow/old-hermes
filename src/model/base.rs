@@ -8,7 +8,7 @@ pub trait DbBmc {
     const TABLE: &'static str;
 }
 
-pub async fn create<MC, E>(mm: &ModelManager, data: E) -> Result<i64>
+pub async fn create<MC, E>(mm: &ModelManager, data: E) -> Result<i32>
 where
     MC: DbBmc,
     E: HasFields,
@@ -20,13 +20,13 @@ where
         .table(MC::TABLE)
         .data(fields)
         .returning(&["id"])
-        .fetch_one::<_, (i64,)>(db)
+        .fetch_one::<_, (i32,)>(db)
         .await?;
 
     Ok(id)
 }
 
-pub async fn get<MC, E>(mm: &ModelManager, id: i64) -> Result<E>
+pub async fn get<MC, E>(mm: &ModelManager, id: i32) -> Result<E>
 where
     MC: DbBmc,
     E: for<'r> FromRow<'r, PgRow> + Unpin + Send,
@@ -49,7 +49,7 @@ where
     Ok(entity)
 }
 
-pub async fn get_many<MC, E>(mm: &ModelManager, ids: &[i64]) -> Result<Vec<E>>
+pub async fn get_many<MC, E>(mm: &ModelManager, ids: &[i32]) -> Result<Vec<E>>
 where
     MC: DbBmc,
     E: for<'r> FromRow<'r, PgRow> + Unpin + Send,
@@ -80,7 +80,7 @@ where
     Ok(entities)
 }
 
-pub async fn update<MC, E>(mm: &ModelManager, id: i64, data: E) -> Result<()>
+pub async fn update<MC, E>(mm: &ModelManager, id: i32, data: E) -> Result<()>
 where
     MC: DbBmc,
     E: HasFields,
@@ -106,7 +106,7 @@ where
     }
 }
 
-pub async fn delete<MC>(mm: &ModelManager, id: i64) -> Result<()>
+pub async fn delete<MC>(mm: &ModelManager, id: i32) -> Result<()>
 where
     MC: DbBmc,
 {

@@ -11,7 +11,7 @@ use tracing::info;
 
 #[derive(Debug, Clone, Fields, FromRow, Serialize)]
 pub struct Invoice {
-    pub id: i64,
+    pub id: i32,
     pub op_id: String,
     pub bolt11: String,
     pub amount: i64,
@@ -37,11 +37,12 @@ impl DbBmc for InvoiceBmc {
 }
 
 impl InvoiceBmc {
-    pub async fn create(mm: &ModelManager, inv_c: InvoiceForCreate) -> Result<i64> {
+    pub async fn create(mm: &ModelManager, inv_c: InvoiceForCreate) -> Result<i32> {
+        info!("create called with inv_c: {:?}", inv_c);
         base::create::<Self, _>(mm, inv_c).await
     }
 
-    pub async fn get(mm: &ModelManager, id: i64) -> Result<Invoice> {
+    pub async fn get(mm: &ModelManager, id: i32) -> Result<Invoice> {
         base::get::<Self, _>(mm, id).await
     }
 
@@ -57,13 +58,13 @@ impl InvoiceBmc {
         Ok(inv)
     }
 
-    pub async fn settle(mm: &ModelManager, id: i64) -> Result<Invoice> {
+    pub async fn settle(mm: &ModelManager, id: i32) -> Result<Invoice> {
         let inv_u = InvoiceForUpdate { settled: true };
         base::update::<Self, _>(mm, id, inv_u).await?;
         Self::get(mm, id).await
     }
 
-    pub async fn delete(mm: &ModelManager, id: i64) -> Result<()> {
-        base::delete::<Self>(mm, id.into()).await
+    pub async fn delete(mm: &ModelManager, id: i32) -> Result<()> {
+        base::delete::<Self>(mm, id).await
     }
 }
