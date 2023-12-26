@@ -7,7 +7,6 @@ use anyhow::{anyhow, Result};
 use serde::Serialize;
 use sqlb::{Fields, HasFields};
 use sqlx::FromRow;
-use tracing::info;
 
 #[derive(Debug, Clone, Fields, FromRow, Serialize)]
 pub struct Invoice {
