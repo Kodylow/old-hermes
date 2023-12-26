@@ -13,3 +13,9 @@ CREATE TABLE nip05relays (
     relay_id INTEGER REFERENCES relay(id),
     PRIMARY KEY (nip05_id, relay_id)
 );
+CREATE TABLE invoice (
+    id SERIAL PRIMARY KEY,
+    op_id VARCHAR(255) NOT NULL,
+    bolt11 VARCHAR(255) NOT NULL,
+    settled BOOLEAN NOT NULL DEFAULT FALSE
+);

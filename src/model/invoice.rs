@@ -12,6 +12,7 @@ use tracing::info;
 #[derive(Debug, Clone, Fields, FromRow, Serialize)]
 pub struct Invoice {
     pub id: i64,
+    pub op_id: String,
     pub bolt11: String,
     pub settled: bool,
 }
