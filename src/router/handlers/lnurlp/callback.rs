@@ -1,16 +1,30 @@
+use std::str::FromStr;
+
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
     Json,
 };
+use fedimint_client::oplog::UpdateStreamOrOutcome;
 use fedimint_core::{task::spawn, Amount};
 use fedimint_ln_client::{LightningClientModule, LnReceiveState};
 use futures::StreamExt;
+use nostr::secp256k1::XOnlyPublicKey;
 use serde::{Deserialize, Serialize};
 use tracing::{error, info};
 use url::Url;
 
-use crate::{config::CONFIG, error::AppError, state::AppState, utils::empty_string_as_none};
+use crate::{
+    config::CONFIG,
+    error::AppError,
+    model::{
+        invoice::{InvoiceBmc, InvoiceForCreate},
+        nip05relays::Nip05RelaysBmc,
+    },
+    router::handlers::{nostr::Nip05Relays, NameOrPubkey},
+    state::AppState,
+    utils::empty_string_as_none,
+};
 
 use super::LnurlStatus;
 
@@ -47,6 +61,8 @@ pub struct LnurlCallbackResponse {
     pub routes: Option<Vec<String>>,
 }
 
+const MIN_AMOUNT: u64 = 1000;
+
 #[axum_macros::debug_handler]
 pub async fn handle_callback(
     Path(username): Path<String>,
@@ -54,21 +70,15 @@ pub async fn handle_callback(
     State(state): State<AppState>,
 ) -> Result<Json<LnurlCallbackResponse>, AppError> {
     info!("callback called with username: {}", username);
-    if username != "kody".to_string() {
+    if params.amount < MIN_AMOUNT {
         return Err(AppError {
-            error: anyhow::anyhow!("Username not found"),
-            status: StatusCode::NOT_FOUND,
-        });
-    }
-    if params.amount < 1000 {
-        return Err(AppError {
-            error: anyhow::anyhow!("Amount too low"),
+            error: anyhow::anyhow!("Amount < MIN_AMOUNT"),
             status: StatusCode::BAD_REQUEST,
         });
     }
+    let nip05relays = Nip05RelaysBmc::get_by(&state.mm, NameOrPubkey::Name, &username).await?;
 
     let ln = state.fm.get_first_module::<LightningClientModule>();
-
     let (op_id, pr) = ln
         .create_bolt11_invoice(
             Amount {
@@ -80,43 +90,24 @@ pub async fn handle_callback(
         )
         .await?;
 
+    // insert invoice into db for later verification
+    let id =
+        InvoiceBmc::create(
+            &state.mm,
+            InvoiceForCreate {
+                op_id: op_id.to_string(),
+                bolt11: pr.to_string(),
+            },
+        )
+        .await?;
+
     // create subscription to operation
     let subscription = ln
         .subscribe_ln_receive(op_id)
         .await
         .expect("subscribing to a just created operation can't fail");
 
-    // spawn a task to wait for the operation to be updated
-    spawn("waiting for invoice being paid", async move {
-        let mut stream = subscription.into_stream();
-        while let Some(op_state) = stream.next().await {
-            match op_state {
-                LnReceiveState::Created => {
-                    info!("Invoice created, waiting for payment");
-                }
-                LnReceiveState::WaitingForPayment { invoice, timeout } => {
-                    info!(
-                        "Waiting for payment for invoice: {}, timeout: {:?}",
-                        invoice, timeout
-                    );
-                }
-                LnReceiveState::Canceled { reason } => {
-                    error!("Payment canceled, reason: {:?}", reason);
-                    break;
-                }
-                LnReceiveState::Funded => {
-                    info!("Payment received, waiting for funds");
-                }
-                LnReceiveState::AwaitingFunds => {
-                    info!("Awaiting funds");
-                }
-                LnReceiveState::Claimed => {
-                    info!("Payment claimed");
-                    break;
-                }
-            }
-        }
-    });
+    spawn_invoice_subscription(state, id, nip05relays, subscription).await;
 
     let verify_url = format!(
         "http://{}:{}/lnurlp/{}/verify/{}",
@@ -136,4 +127,60 @@ pub async fn handle_callback(
     };
 
     Ok(Json(res))
+}
+
+async fn spawn_invoice_subscription(
+    state: AppState,
+    id: i64,
+    nip05relays: Nip05Relays,
+    subscription: UpdateStreamOrOutcome<LnReceiveState>,
+) {
+    spawn("waiting for invoice being paid", async move {
+        let mut stream = subscription.into_stream();
+        while let Some(op_state) = stream.next().await {
+            match op_state {
+                LnReceiveState::Canceled { reason } => {
+                    error!("Payment canceled, reason: {:?}", reason);
+                    break;
+                }
+                LnReceiveState::Claimed => {
+                    info!("Payment claimed");
+                    settle_invoice_and_notify_user(state, id, nip05relays.clone())
+                        .await
+                        .expect("settling invoice can't fail");
+                    break;
+                }
+                _ => {}
+            }
+        }
+    });
+}
+
+async fn settle_invoice_and_notify_user(
+    state: AppState,
+    id: i64,
+    nip05relays: Nip05Relays,
+) -> Result<(), Box<dyn std::error::Error>> {
+    InvoiceBmc::settle(&state.mm, id)
+        .await
+        .expect("settling invoice can't fail");
+
+    // Send nostr DM to user
+    for relay in &nip05relays.relays {
+        let url = Url::from_str(&relay).expect("relay url is valid");
+        state.nostr.connect_relay(url.to_string()).await?;
+    }
+
+    state
+        .nostr
+        .send_direct_msg(
+            XOnlyPublicKey::from_str(&nip05relays.pubkey).unwrap(),
+            "connected!".to_string(),
+            None,
+        )
+        .await?;
+
+    state.nostr.disconnect().await?;
+
+    Ok(())
 }

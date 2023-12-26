@@ -25,7 +25,6 @@ pub struct InvoiceForCreate {
 
 #[derive(Debug, Clone, Fields, FromRow, Serialize)]
 pub struct InvoiceForUpdate {
-    pub op_id: String,
     pub settled: bool,
 }
 
@@ -52,8 +51,8 @@ impl InvoiceBmc {
         Ok(inv)
     }
 
-    pub async fn update_by_op_id(mm: &ModelManager, inv_u: InvoiceForUpdate) -> Result<()> {
-        let id: i64 = Self::get_by_op_id(mm, &inv_u.op_id).await?.id;
+    pub async fn settle(mm: &ModelManager, id: i64) -> Result<()> {
+        let inv_u = InvoiceForUpdate { settled: true };
         base::update::<Self, _>(mm, id, inv_u).await
     }
 
