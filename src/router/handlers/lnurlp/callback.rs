@@ -148,9 +148,12 @@ async fn spawn_invoice_subscription(
                 }
                 LnReceiveState::Claimed => {
                     info!("Payment claimed");
-                    settle_invoice_and_notify_user(state, id, nip05relays.clone())
+                    let invoice = InvoiceBmc::settle(&state.mm, id)
                         .await
                         .expect("settling invoice can't fail");
+                    notify_user(state, invoice.amount as u64, nip05relays.clone())
+                        .await
+                        .expect("notifying user can't fail");
                     break;
                 }
                 _ => {}
@@ -159,21 +162,16 @@ async fn spawn_invoice_subscription(
     });
 }
 
-async fn settle_invoice_and_notify_user(
+async fn notify_user(
     state: AppState,
-    id: i32,
+    amount: u64,
     nip05relays: Nip05Relays,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let invoice = InvoiceBmc::settle(&state.mm, id).await?;
     let mint = state.fm.get_first_module::<MintClientModule>();
     let (operation_id, notes) = mint
-        .spend_notes(
-            Amount::from_msats(invoice.amount as u64),
-            Duration::from_secs(604800),
-            (),
-        )
+        .spend_notes(Amount::from_msats(amount), Duration::from_secs(604800), ())
         .await?;
-    send_nostr_dm(&state, &nip05relays, operation_id, invoice.amount, notes).await?;
+    send_nostr_dm(&state, &nip05relays, operation_id, amount, notes).await?;
     Ok(())
 }
 
@@ -181,7 +179,7 @@ async fn send_nostr_dm(
     state: &AppState,
     nip05relays: &Nip05Relays,
     operation_id: OperationId,
-    amount: i64,
+    amount: u64,
     notes: OOBNotes,
 ) -> Result<(), Box<dyn std::error::Error>> {
     state
