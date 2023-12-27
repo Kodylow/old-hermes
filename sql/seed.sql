@@ -1,5 +1,5 @@
 -- Seeding script
-INSERT INTO user (pubkey, name, dm_type)
+INSERT INTO app_user (pubkey, name, dm_type)
 VALUES (
         '5be6446aa8a31c11b3b453bf8dafc9b346ff328d1fa11a0fa02a1e6461f6a9b1',
         'tony',
@@ -40,22 +40,22 @@ SELECT id INTO relay_id
 FROM relay
 WHERE relay = 'wss://nostr.mutinywallet.com';
 SELECT id INTO tony_id
-FROM user
+FROM app_user
 WHERE name = 'tony';
 SELECT id INTO testy_id
-FROM user
+FROM app_user
 WHERE name = 'testy';
 SELECT id INTO kody_id
-FROM user
+FROM app_user
 WHERE name = 'kody';
 SELECT id INTO test_id
-FROM user
+FROM app_user
 WHERE name = 'test';
 SELECT id INTO carman_id
-FROM user
+FROM app_user
 WHERE name = 'carman';
--- Insert into userrelays
-INSERT INTO userrelays (user_id, relay_id)
+-- Insert into the join table
+INSERT INTO app_user_relays (user_id, relay_id)
 VALUES (tony_id, relay_id),
     (testy_id, relay_id),
     (kody_id, relay_id),

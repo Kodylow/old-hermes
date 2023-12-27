@@ -12,7 +12,7 @@ CREATE TABLE relay (
 CREATE TABLE app_user_relays (
     app_user_id INTEGER REFERENCES app_user(id),
     relay_id INTEGER REFERENCES relay(id),
-    PRIMARY KEY (nip05_id, relay_id)
+    PRIMARY KEY (app_user_id, relay_id)
 );
 CREATE TABLE invoice (
     id SERIAL PRIMARY KEY,
