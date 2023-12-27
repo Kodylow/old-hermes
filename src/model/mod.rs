@@ -1,9 +1,9 @@
 mod base;
 pub mod invoice;
-pub mod nip05;
-pub mod nip05relays;
 pub mod relay;
 mod store;
+pub mod user;
+pub mod userrelays;
 
 use crate::model::store::{new_db_pool, Db};
 use anyhow::Result;

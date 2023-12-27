@@ -1,4 +1,6 @@
-use std::fs::read_to_string;
+use std::{fmt, fs::read_to_string};
+
+use serde::{Deserialize, Serialize};
 
 pub mod lnurlp;
 pub mod nostr;
@@ -12,4 +14,20 @@ pub enum NameOrPubkey {
     Name,
     #[allow(dead_code)]
     Pubkey,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum SupportedDmType {
+    Nostr,
+    XMPP,
+}
+
+impl fmt::Display for SupportedDmType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            SupportedDmType::Nostr => write!(f, "nostr"),
+            SupportedDmType::XMPP => write!(f, "xmpp"),
+        }
+    }
 }

@@ -23,9 +23,9 @@ use crate::{
     error::AppError,
     model::{
         invoice::{InvoiceBmc, InvoiceForCreate},
-        nip05relays::Nip05RelaysBmc,
+        userrelays::UserRelaysBmc,
     },
-    router::handlers::{nostr::Nip05Relays, NameOrPubkey},
+    router::handlers::{nostr::UserRelays, NameOrPubkey},
     state::AppState,
     utils::{create_xmpp_client, empty_string_as_none},
 };
@@ -80,7 +80,7 @@ pub async fn handle_callback(
             status: StatusCode::BAD_REQUEST,
         });
     }
-    let nip05relays = Nip05RelaysBmc::get_by(&state.mm, NameOrPubkey::Name, &username).await?;
+    let nip05relays = UserRelaysBmc::get_by(&state.mm, NameOrPubkey::Name, &username).await?;
 
     let ln = state.fm.get_first_module::<LightningClientModule>();
     let (op_id, pr) = ln
@@ -136,7 +136,7 @@ pub async fn handle_callback(
 async fn spawn_invoice_subscription(
     state: AppState,
     id: i32,
-    nip05relays: Nip05Relays,
+    userrelays: UserRelays,
     subscription: UpdateStreamOrOutcome<LnReceiveState>,
 ) {
     spawn("waiting for invoice being paid", async move {
@@ -152,7 +152,7 @@ async fn spawn_invoice_subscription(
                     let invoice = InvoiceBmc::settle(&state.mm, id)
                         .await
                         .expect("settling invoice can't fail");
-                    notify_user(state, invoice.amount as u64, nip05relays.clone())
+                    notify_user(state, invoice.amount as u64, userrelays.clone())
                         .await
                         .expect("notifying user can't fail");
                     break;
@@ -166,19 +166,27 @@ async fn spawn_invoice_subscription(
 async fn notify_user(
     state: AppState,
     amount: u64,
-    nip05relays: Nip05Relays,
+    userrelays: UserRelays,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mint = state.fm.get_first_module::<MintClientModule>();
     let (operation_id, notes) = mint
         .spend_notes(Amount::from_msats(amount), Duration::from_secs(604800), ())
         .await?;
-    send_nostr_dm(&state, &nip05relays, operation_id, amount, notes).await?;
+    match userrelays.dm_type.as_str() {
+        "nostr" => send_nostr_dm(&state, &userrelays, operation_id, amount, notes)
+            .await
+            .map_err(|e| e.into()),
+        "xmpp" => send_xmpp_msg(&userrelays, operation_id, amount, notes)
+            .await
+            .map_err(|e| e.into()),
+        _ => Err(anyhow::anyhow!("Unsupported dm_type")),
+    }?;
     Ok(())
 }
 
 async fn send_nostr_dm(
     state: &AppState,
-    nip05relays: &Nip05Relays,
+    nip05relays: &UserRelays,
     operation_id: OperationId,
     amount: u64,
     notes: OOBNotes,
@@ -201,7 +209,7 @@ async fn send_nostr_dm(
 
 // TODO: add xmpp to registration
 async fn send_xmpp_msg(
-    nip05relays: &Nip05Relays,
+    nip05relays: &UserRelays,
     operation_id: OperationId,
     amount: u64,
     notes: OOBNotes,

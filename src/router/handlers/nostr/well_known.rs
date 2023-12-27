@@ -10,25 +10,25 @@ use std::str::FromStr;
 use tracing::info;
 
 use crate::{
-    error::AppError, model::nip05relays::Nip05RelaysBmc, router::handlers::NameOrPubkey,
+    error::AppError, model::userrelays::UserRelaysBmc, router::handlers::NameOrPubkey,
     state::AppState,
 };
 
-use super::Nip05Relays;
+use super::UserRelays;
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
-pub struct Nip05WellKnownParams {
+pub struct UserWellKnownParams {
     pub name: String,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
-pub struct Nip05WellKnown {
+pub struct UserWellKnown {
     pub names: HashMap<String, XOnlyPublicKey>,
     pub relays: HashMap<XOnlyPublicKey, Vec<String>>,
 }
 
-impl Nip05WellKnown {
-    pub fn from_db(nip05relays: Nip05Relays) -> Self {
+impl UserWellKnown {
+    pub fn from_db(nip05relays: UserRelays) -> Self {
         let mut names = HashMap::new();
         names.insert(
             nip05relays.name,
@@ -45,13 +45,13 @@ impl Nip05WellKnown {
 
 #[axum_macros::debug_handler]
 pub async fn handle_nip05_well_known(
-    Query(params): Query<Nip05WellKnownParams>,
+    Query(params): Query<UserWellKnownParams>,
     State(state): State<AppState>,
-) -> Result<Json<Nip05WellKnown>, AppError> {
+) -> Result<Json<UserWellKnown>, AppError> {
     info!("nip05_well_known called with name: {:?}", params.name);
-    let nip05relays = Nip05RelaysBmc::get_by(&state.mm, NameOrPubkey::Name, &params.name).await?;
+    let nip05relays = UserRelaysBmc::get_by(&state.mm, NameOrPubkey::Name, &params.name).await?;
 
-    let nip05_well_known = Nip05WellKnown::from_db(nip05relays);
+    let nip05_well_known = UserWellKnown::from_db(nip05relays);
 
     Ok(Json(nip05_well_known))
 }

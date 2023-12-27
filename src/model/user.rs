@@ -12,67 +12,70 @@ use sqlb::HasFields;
 use sqlx::FromRow;
 
 #[derive(Debug, Clone, Fields, FromRow, Serialize)]
-pub struct Nip05 {
+pub struct User {
     pub id: i32,
     pub pubkey: String,
     pub name: String,
+    pub dm_type: String,
 }
 
 #[derive(Debug, Clone, Fields, FromRow, Serialize)]
-pub struct Nip05ForCreate {
+pub struct UserForCreate {
     pub pubkey: String,
     pub name: String,
+    pub dm_type: String,
 }
 
 #[derive(Debug, Clone, Fields, FromRow, Serialize)]
-pub struct Nip05ForUpdate {
+pub struct UserForUpdate {
     pub pubkey: Option<String>,
     pub name: Option<String>,
+    pub dm_type: Option<String>,
 }
 
-pub struct Nip05Bmc;
+pub struct UserBmc;
 
-impl DbBmc for Nip05Bmc {
-    const TABLE: &'static str = "nip05";
+impl DbBmc for UserBmc {
+    const TABLE: &'static str = "user";
 }
 
-impl Nip05Bmc {
-    pub async fn create(mm: &ModelManager, nip05_c: Nip05ForCreate) -> Result<i32> {
-        base::create::<Self, _>(mm, nip05_c).await
+impl UserBmc {
+    pub async fn create(mm: &ModelManager, user_c: UserForCreate) -> Result<i32> {
+        base::create::<Self, _>(mm, user_c).await
     }
 
-    pub async fn get(mm: &ModelManager, id: i32) -> Result<Nip05> {
+    pub async fn get(mm: &ModelManager, id: i32) -> Result<User> {
         base::get::<Self, _>(mm, id).await
     }
 
-    pub async fn get_by(mm: &ModelManager, col: NameOrPubkey, val: &str) -> Result<Nip05> {
+    pub async fn get_by(mm: &ModelManager, col: NameOrPubkey, val: &str) -> Result<User> {
         let column_name = match col {
             NameOrPubkey::Name => "name",
             NameOrPubkey::Pubkey => "pubkey",
         };
 
-        let nip05: Nip05 = sqlb::select()
+        let user: User = sqlb::select()
             .table(Self::TABLE)
-            .columns(Nip05::field_names())
+            .columns(User::field_names())
             .and_where(column_name, "=", val)
             .fetch_optional(mm.db())
             .await?
             .ok_or(anyhow!(
-                "Nip05 not found in table '{}', {}: {}",
+                "User not found in table '{}', {}: {}",
                 Self::TABLE,
                 column_name,
                 val
             ))?;
 
-        Ok(nip05)
+        Ok(user)
     }
 
-    pub async fn list(mm: &ModelManager) -> Result<Vec<Nip05>> {
+    pub async fn list(mm: &ModelManager) -> Result<Vec<User>> {
         base::list::<Self, _>(mm).await
     }
 
-    pub async fn update(mm: &ModelManager, id: i32, nip05_u: Nip05ForUpdate) -> Result<()> {
-        base::update::<Self, _>(mm, id, nip05_u).await
+    pub async fn update(mm: &ModelManager, id: i32, user_u: UserForUpdate) -> Result<()> {
+        base::update::<Self, _>(mm, id, user_u).await
     }
 
     pub async fn delete(mm: &ModelManager, id: i32) -> Result<()> {

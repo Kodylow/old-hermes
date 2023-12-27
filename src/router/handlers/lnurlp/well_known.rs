@@ -3,7 +3,7 @@ use std::str::FromStr;
 use super::{LnurlStatus, LnurlType};
 use crate::config::CONFIG;
 use crate::error::AppError;
-use crate::model::nip05::Nip05Bmc;
+use crate::model::user::UserBmc;
 use crate::router::handlers::NameOrPubkey;
 use crate::state::AppState;
 use axum::extract::{Path, State};
@@ -65,7 +65,7 @@ pub async fn handle_well_known(
 ) -> Result<Json<LnurlWellKnownResponse>, AppError> {
     // see if username exists in nostr.json
     info!("well_known called with username: {}", username);
-    let nip05 = Nip05Bmc::get_by(&state.mm, NameOrPubkey::Name, &username).await?;
+    let nip05 = UserBmc::get_by(&state.mm, NameOrPubkey::Name, &username).await?;
 
     let res = LnurlWellKnownResponse {
         callback: format!(
