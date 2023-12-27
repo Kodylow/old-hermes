@@ -199,6 +199,7 @@ async fn send_nostr_dm(
     Ok(())
 }
 
+// TODO: add xmpp to registration
 async fn send_xmpp_msg(
     nip05relays: &Nip05Relays,
     operation_id: OperationId,
