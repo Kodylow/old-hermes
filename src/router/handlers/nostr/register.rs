@@ -6,7 +6,7 @@ use tracing::info;
 use crate::{
     config::CONFIG,
     error::AppError,
-    model::userrelays::{UserRelaysBmc, UserRelaysForCreate},
+    model::app_user_relays::{AppUserRelaysBmc, AppUserRelaysForCreate},
     state::AppState,
 };
 
@@ -45,14 +45,14 @@ pub async fn handle_register(
         }
     };
 
-    let nip05relays_c = UserRelaysForCreate {
+    let nip05relays_c = AppUserRelaysForCreate {
         pubkey: params.pubkey,
         name: params.name,
         dm_type: params.dm_type.to_string(),
         relays,
     };
 
-    match UserRelaysBmc::register(&mut state.mm, nip05relays_c).await {
+    match AppUserRelaysBmc::register(&mut state.mm, nip05relays_c).await {
         Ok(_) => Ok(Json(true)),
         Err(e) => Err(AppError::new(
             StatusCode::BAD_REQUEST,

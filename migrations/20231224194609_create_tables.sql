@@ -1,15 +1,16 @@
 -- Up
-CREATE TABLE nip05 (
+CREATE TABLE app_user (
     id SERIAL PRIMARY KEY,
     pubkey VARCHAR(65) NOT NULL,
-    name VARCHAR(20) NOT NULL
+    name VARCHAR(20) NOT NULL,
+    dm_type VARCHAR(5) NOT NULL
 );
 CREATE TABLE relay (
     id SERIAL PRIMARY KEY,
     relay VARCHAR(255) NOT NULL
 );
-CREATE TABLE nip05relays (
-    nip05_id INTEGER REFERENCES nip05(id),
+CREATE TABLE user_relays (
+    user_id INTEGER REFERENCES user(id),
     relay_id INTEGER REFERENCES relay(id),
     PRIMARY KEY (nip05_id, relay_id)
 );

@@ -12,7 +12,7 @@ use sqlb::HasFields;
 use sqlx::FromRow;
 
 #[derive(Debug, Clone, Fields, FromRow, Serialize)]
-pub struct User {
+pub struct AppUser {
     pub id: i32,
     pub pubkey: String,
     pub name: String,
@@ -20,43 +20,43 @@ pub struct User {
 }
 
 #[derive(Debug, Clone, Fields, FromRow, Serialize)]
-pub struct UserForCreate {
+pub struct AppUserForCreate {
     pub pubkey: String,
     pub name: String,
     pub dm_type: String,
 }
 
 #[derive(Debug, Clone, Fields, FromRow, Serialize)]
-pub struct UserForUpdate {
+pub struct AppUserForUpdate {
     pub pubkey: Option<String>,
     pub name: Option<String>,
     pub dm_type: Option<String>,
 }
 
-pub struct UserBmc;
+pub struct AppUserBmc;
 
-impl DbBmc for UserBmc {
-    const TABLE: &'static str = "user";
+impl DbBmc for AppUserBmc {
+    const TABLE: &'static str = "app_user";
 }
 
-impl UserBmc {
-    pub async fn create(mm: &ModelManager, user_c: UserForCreate) -> Result<i32> {
+impl AppUserBmc {
+    pub async fn create(mm: &ModelManager, user_c: AppUserForCreate) -> Result<i32> {
         base::create::<Self, _>(mm, user_c).await
     }
 
-    pub async fn get(mm: &ModelManager, id: i32) -> Result<User> {
+    pub async fn get(mm: &ModelManager, id: i32) -> Result<AppUser> {
         base::get::<Self, _>(mm, id).await
     }
 
-    pub async fn get_by(mm: &ModelManager, col: NameOrPubkey, val: &str) -> Result<User> {
+    pub async fn get_by(mm: &ModelManager, col: NameOrPubkey, val: &str) -> Result<AppUser> {
         let column_name = match col {
             NameOrPubkey::Name => "name",
             NameOrPubkey::Pubkey => "pubkey",
         };
 
-        let user: User = sqlb::select()
+        let user: AppUser = sqlb::select()
             .table(Self::TABLE)
-            .columns(User::field_names())
+            .columns(AppUser::field_names())
             .and_where(column_name, "=", val)
             .fetch_optional(mm.db())
             .await?
@@ -70,11 +70,11 @@ impl UserBmc {
         Ok(user)
     }
 
-    pub async fn list(mm: &ModelManager) -> Result<Vec<User>> {
+    pub async fn list(mm: &ModelManager) -> Result<Vec<AppUser>> {
         base::list::<Self, _>(mm).await
     }
 
-    pub async fn update(mm: &ModelManager, id: i32, user_u: UserForUpdate) -> Result<()> {
+    pub async fn update(mm: &ModelManager, id: i32, user_u: AppUserForUpdate) -> Result<()> {
         base::update::<Self, _>(mm, id, user_u).await
     }
 

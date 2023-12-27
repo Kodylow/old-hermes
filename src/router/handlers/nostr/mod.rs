@@ -4,7 +4,7 @@ pub mod register;
 pub mod well_known;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct UserRelays {
+pub struct AppUserRelays {
     pub pubkey: String,
     pub name: String,
     pub dm_type: String,
