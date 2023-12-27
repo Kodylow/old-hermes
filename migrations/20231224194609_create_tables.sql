@@ -9,8 +9,8 @@ CREATE TABLE relay (
     id SERIAL PRIMARY KEY,
     relay VARCHAR(255) NOT NULL
 );
-CREATE TABLE user_relays (
-    user_id INTEGER REFERENCES user(id),
+CREATE TABLE app_user_relays (
+    app_user_id INTEGER REFERENCES app_user(id),
     relay_id INTEGER REFERENCES relay(id),
     PRIMARY KEY (nip05_id, relay_id)
 );

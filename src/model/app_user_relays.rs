@@ -15,7 +15,7 @@ use sqlx::FromRow;
 
 #[derive(Debug, Clone, Fields, FromRow, Serialize)]
 pub struct AppUserRelay {
-    pub user_id: i32,
+    pub app_user_id: i32,
     pub relay_id: i32,
 }
 
@@ -58,7 +58,7 @@ impl AppUserRelaysBmc {
             let relay_c = RelayForCreate { relay };
             let relay_id = base::create::<Self, _>(&mm, relay_c).await?;
             let userrelay = AppUserRelay {
-                user_id: user_id,
+                app_user_id: user_id,
                 relay_id: relay_id,
             };
             base::create::<Self, _>(&mm, userrelay).await?;
