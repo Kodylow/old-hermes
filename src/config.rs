@@ -20,6 +20,9 @@ pub struct Config {
     pub pg_db: String,
     pub nostr_sk: String,
     pub default_relay: String,
+    pub xmpp_username: String,
+    pub xmpp_password: String,
+    pub xmpp_chat_server: String,
 }
 
 impl Config {
@@ -48,6 +51,10 @@ impl Config {
         let default_relay =
             env::var("DEFAULT_NOSTR_RELAY").expect("DEFAULT_NOSTR_RELAY must be set");
 
+        let xmpp_username = env::var("XMPP_USERNAME").expect("XMPP_USERNAME must be set");
+        let xmpp_password = env::var("XMPP_PASSWORD").expect("XMPP_PASSWORD must be set");
+        let xmpp_chat_server = env::var("XMPP_CHAT_SERVER").expect("XMPP_CHAT_SERVER must be set");
+
         info!("Loaded config");
 
         Ok(Self {
@@ -59,6 +66,9 @@ impl Config {
             pg_db,
             nostr_sk,
             default_relay,
+            xmpp_username,
+            xmpp_password,
+            xmpp_chat_server,
         })
     }
 }
