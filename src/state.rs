@@ -1,4 +1,5 @@
 use fedimint_client::ClientArc;
+use nostr::key::FromSkStr;
 use nostr::Keys;
 use nostr_sdk::Client;
 
@@ -41,23 +42,8 @@ pub async fn load_fedimint_client() -> Result<ClientArc> {
 }
 
 pub async fn load_nostr_client() -> Result<Client> {
-    let client = nostr_sdk::Client::new(&Keys::generate());
+    let keys = Keys::from_sk_str(&CONFIG.nostr_sk)?;
+    let client = nostr_sdk::Client::new(&keys);
 
     Ok(client)
 }
-
-// let filter = Filter::new()
-//     .kind(Kind::Metadata)
-//     .author(params.nostr_pubkey)
-//     .limit(1);
-
-// let events = client.get_events_of(vec![filter], None).await?;
-
-// if let Some(event) = events.first() {
-//     let metadata: Metadata = serde_json::from_str(&event.content)?;
-//     println!("nip5: {:?}", metadata.nip05);
-// }
-
-// client
-//     .send_direct_msg(params.nostr_pubkey, "connected!".to_string(), None)
-//     .await?;

@@ -18,6 +18,7 @@ pub struct Config {
     pub root_secret: DerivableSecret,
     pub fm_db_path: PathBuf,
     pub pg_db: String,
+    pub nostr_sk: String,
     pub default_relay: String,
 }
 
@@ -42,6 +43,8 @@ impl Config {
 
         let pg_db = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
 
+        let nostr_sk = env::var("NOSTR_SK").expect("NOSTR_SK must be set");
+
         let default_relay =
             env::var("DEFAULT_NOSTR_RELAY").expect("DEFAULT_NOSTR_RELAY must be set");
 
@@ -54,6 +57,7 @@ impl Config {
             root_secret,
             fm_db_path,
             pg_db,
+            nostr_sk,
             default_relay,
         })
     }
