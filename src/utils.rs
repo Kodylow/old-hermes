@@ -19,7 +19,7 @@ where
 }
 
 // TODO: XMPP client doesn't implement Clone, so we can't use it in AppState which is annoying
-pub async fn create_xmpp_client() -> Result<Agent> {
+pub fn create_xmpp_client() -> Result<Agent> {
     let jid = xmpp::BareJid::new(&format!("{}@{}", CONFIG.xmpp_username, CONFIG.xmpp_chat_server))?;
     let client = xmpp::ClientBuilder::new(jid, &CONFIG.xmpp_password).build();
 

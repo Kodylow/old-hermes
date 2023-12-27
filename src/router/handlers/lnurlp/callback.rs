@@ -16,6 +16,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tracing::{error, info};
 use url::Url;
+use xmpp::{parsers::message::MessageType, Jid};
 
 use crate::{
     config::CONFIG,
@@ -26,7 +27,7 @@ use crate::{
     },
     router::handlers::{nostr::Nip05Relays, NameOrPubkey},
     state::AppState,
-    utils::empty_string_as_none,
+    utils::{create_xmpp_client, empty_string_as_none},
 };
 
 use super::LnurlStatus;
@@ -181,7 +182,7 @@ async fn send_nostr_dm(
     operation_id: OperationId,
     amount: u64,
     notes: OOBNotes,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<()> {
     state
         .nostr
         .send_direct_msg(
@@ -195,5 +196,32 @@ async fn send_nostr_dm(
             None,
         )
         .await?;
+    Ok(())
+}
+
+async fn send_xmpp_msg(
+    nip05relays: &Nip05Relays,
+    operation_id: OperationId,
+    amount: u64,
+    notes: OOBNotes,
+) -> Result<()> {
+    let mut xmpp_client = create_xmpp_client()?;
+    let recipient =
+        xmpp::BareJid::new(&format!("{}@{}", nip05relays.name, CONFIG.xmpp_chat_server))?;
+
+    xmpp_client
+        .send_message(
+            Jid::Bare(recipient),
+            MessageType::Chat,
+            "en",
+            &json!({
+                "operationId": operation_id,
+                "amount": amount,
+                "notes": notes.to_string(),
+            })
+            .to_string(),
+        )
+        .await;
+
     Ok(())
 }
