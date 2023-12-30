@@ -71,7 +71,7 @@ pub async fn handle_well_known(
         callback: format!(
             "http://{}/lnurlp/{}/callback",
             CONFIG.domain,
-            username.to_string()
+            username
         )
         .parse()?,
         max_sendable: Amount { msats: 100000 },

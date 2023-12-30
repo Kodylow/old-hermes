@@ -118,7 +118,7 @@ pub async fn handle_callback(
         CONFIG.domain,
         CONFIG.port,
         username,
-        op_id.to_string()
+        op_id
     );
 
     let res = LnurlCallbackResponse {
@@ -176,11 +176,9 @@ async fn notify_user(
         "nostr" => {
             send_nostr_dm(&state, &app_user_relays, operation_id, amount, notes)
                 .await
-                .map_err(|e| e.into())
         }
         "xmpp" => send_xmpp_msg(&app_user_relays, operation_id, amount, notes)
-            .await
-            .map_err(|e| e.into()),
+            .await,
         _ => Err(anyhow::anyhow!("Unsupported dm_type")),
     }?;
     Ok(())

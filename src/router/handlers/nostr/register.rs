@@ -22,7 +22,7 @@ pub struct UserParams {
 
 #[axum_macros::debug_handler]
 pub async fn handle_register(
-    State(mut state): State<AppState>,
+    State(state): State<AppState>,
     Json(params): Json<UserParams>,
 ) -> Result<Json<bool>, AppError> {
     info!("register called with pubkey: {:?}", params.pubkey);
@@ -31,7 +31,7 @@ pub async fn handle_register(
         SupportedDmType::Nostr => params
             .relays
             .unwrap_or_else(|| vec![CONFIG.default_relay.clone()]),
-        SupportedDmType::XMPP => {
+        SupportedDmType::Xmpp => {
             if params.relays.clone().is_some_and(|r| r.len() != 1) {
                 return Err(AppError::new(
                     StatusCode::BAD_REQUEST,
@@ -52,7 +52,7 @@ pub async fn handle_register(
         relays,
     };
 
-    match AppUserRelaysBmc::register(&mut state.mm, nip05relays_c).await {
+    match AppUserRelaysBmc::register(&state.mm, nip05relays_c).await {
         Ok(_) => Ok(Json(true)),
         Err(e) => Err(AppError::new(
             StatusCode::BAD_REQUEST,
