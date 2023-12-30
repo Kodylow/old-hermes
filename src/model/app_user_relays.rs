@@ -52,16 +52,16 @@ impl AppUserRelaysBmc {
             name: app_user_relays_c.name,
             dm_type: app_user_relays_c.dm_type,
         };
-        let user_id = base::create::<Self, _>(&mm, user_c).await?;
+        let user_id = base::create::<Self, _>(mm, user_c).await?;
 
         for relay in app_user_relays_c.relays {
             let relay_c = RelayForCreate { relay };
-            let relay_id = base::create::<Self, _>(&mm, relay_c).await?;
+            let relay_id = base::create::<Self, _>(mm, relay_c).await?;
             let userrelay = AppUserRelay {
                 app_user_id: user_id,
-                relay_id: relay_id,
+                relay_id,
             };
-            base::create::<Self, _>(&mm, userrelay).await?;
+            base::create::<Self, _>(mm, userrelay).await?;
         }
         tx.commit().await?;
 

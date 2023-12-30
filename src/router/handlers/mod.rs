@@ -20,14 +20,14 @@ pub enum NameOrPubkey {
 #[serde(rename_all = "lowercase")]
 pub enum SupportedDmType {
     Nostr,
-    XMPP,
+    Xmpp,
 }
 
 impl fmt::Display for SupportedDmType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             SupportedDmType::Nostr => write!(f, "nostr"),
-            SupportedDmType::XMPP => write!(f, "xmpp"),
+            SupportedDmType::Xmpp => write!(f, "xmpp"),
         }
     }
 }
