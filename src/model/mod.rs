@@ -5,6 +5,7 @@ pub mod invoice;
 pub mod invoice_state;
 pub mod relay;
 mod store;
+pub mod zap;
 
 use crate::model::store::{new_db_pool, Db};
 use anyhow::Result;

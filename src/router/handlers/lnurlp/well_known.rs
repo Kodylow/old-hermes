@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 use super::{LnurlStatus, LnurlType};
 use crate::config::CONFIG;
 use crate::error::AppError;
@@ -65,7 +63,7 @@ pub async fn handle_well_known(
 ) -> Result<Json<LnurlWellKnownResponse>, AppError> {
     // see if username exists in nostr.json
     info!("well_known called with username: {}", username);
-    let app_user = AppUserBmc::get_by(&state.mm, NameOrPubkey::Name, &username).await?;
+    let _app_user = AppUserBmc::get_by(&state.mm, NameOrPubkey::Name, &username).await?;
 
     let res = LnurlWellKnownResponse {
         callback: format!("http://{}/lnurlp/{}/callback", CONFIG.domain, username).parse()?,
@@ -75,7 +73,7 @@ pub async fn handle_well_known(
         comment_allowed: None,
         tag: LnurlType::PayRequest,
         status: LnurlStatus::Ok,
-        nostr_pubkey: Some(XOnlyPublicKey::from_str(&app_user.pubkey)?),
+        nostr_pubkey: Some(CONFIG.nostr_sk.public_key()),
         allows_nostr: true,
     };
 

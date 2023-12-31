@@ -1,6 +1,4 @@
 use fedimint_client::ClientArc;
-use nostr::key::FromSkStr;
-use nostr::Keys;
 use nostr_sdk::Client;
 
 use crate::{config, model::ModelManager};
@@ -41,8 +39,7 @@ pub async fn load_fedimint_client() -> Result<ClientArc> {
 }
 
 pub async fn load_nostr_client() -> Result<Client> {
-    let keys = Keys::from_sk_str(&CONFIG.nostr_sk)?;
-    let client = nostr_sdk::Client::new(&keys);
+    let client = nostr_sdk::Client::new(&CONFIG.nostr_sk);
 
     client.add_relay(CONFIG.default_relay.as_str()).await?;
     client.connect().await;
