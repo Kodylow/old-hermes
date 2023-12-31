@@ -2,6 +2,8 @@ use fedimint_client::derivable_secret::DerivableSecret;
 use fedimint_client::secret::{PlainRootSecretStrategy, RootSecretStrategy};
 use fedimint_core::api::InviteCode;
 use nostr::hashes::hex::FromHex;
+use nostr::key::FromSkStr;
+use nostr::Keys;
 use std::env;
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -19,7 +21,7 @@ pub struct Config {
     pub root_secret: DerivableSecret,
     pub fm_db_path: PathBuf,
     pub pg_db: String,
-    pub nostr_sk: String,
+    pub nostr_sk: Keys,
     pub default_relay: String,
     pub xmpp_username: String,
     pub xmpp_password: String,
@@ -48,6 +50,7 @@ impl Config {
         let pg_db = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
 
         let nostr_sk = env::var("NOSTR_SK").expect("NOSTR_SK must be set");
+        let nostr_sk = Keys::from_sk_str(&nostr_sk).expect("Invalid NOSTR_SK");
 
         let default_relay =
             env::var("DEFAULT_NOSTR_RELAY").expect("DEFAULT_NOSTR_RELAY must be set");

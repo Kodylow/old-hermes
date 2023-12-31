@@ -22,3 +22,9 @@ CREATE TABLE invoice (
     amount BIGINT NOT NULL,
     state INTEGER NOT NULL DEFAULT 0
 );
+CREATE TABLE zaps
+(
+    id       INTEGER NOT NULL PRIMARY KEY references invoice (id),
+    request  TEXT    NOT NULL,
+    event_id VARCHAR(64)
+);
