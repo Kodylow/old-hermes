@@ -38,7 +38,7 @@ pub struct AppUserRelaysForUpdate {
 pub struct AppUserRelaysBmc;
 
 impl DbBmc for AppUserRelaysBmc {
-    const TABLE: &'static str = "userrelays";
+    const TABLE: &'static str = "app_user_relays";
 }
 
 impl AppUserRelaysBmc {
@@ -68,21 +68,16 @@ impl AppUserRelaysBmc {
         Ok(())
     }
 
-    pub async fn get_by(
-        mm: &ModelManager,
-        field: NameOrPubkey,
-        val: &str,
-    ) -> Result<AppUserRelays> {
+    pub async fn get_by_id(mm: &ModelManager, id: i32) -> Result<AppUserRelays> {
         let db = mm.db();
 
-        let user: AppUser = AppUserBmc::get_by(mm, field, val).await?;
-        let userrelay: Vec<AppUserRelay> =
-            sqlb::select()
-                .table(Self::TABLE)
-                .columns(AppUserRelay::field_names())
-                .and_where("user_id", "=", user.id)
-                .fetch_all(db)
-                .await?;
+        let user: AppUser = AppUserBmc::get(mm, id).await?;
+        let userrelay: Vec<AppUserRelay> = sqlb::select()
+            .table(Self::TABLE)
+            .columns(AppUserRelay::field_names())
+            .and_where("app_user_id", "=", user.id)
+            .fetch_all(db)
+            .await?;
 
         let relay_ids: Vec<i32> = userrelay
             .into_iter()
@@ -92,6 +87,43 @@ impl AppUserRelaysBmc {
         let relays = RelayBmc::get_many(mm, &relay_ids).await?;
 
         let userrelays = AppUserRelays {
+            app_user_id: user.id,
+            pubkey: user.pubkey,
+            name: user.name,
+            dm_type: user.dm_type,
+            relays: relays
+                .into_iter()
+                .map(|relay| relay.relay.to_string())
+                .collect(),
+        };
+
+        Ok(userrelays)
+    }
+
+    pub async fn get_by(
+        mm: &ModelManager,
+        field: NameOrPubkey,
+        val: &str,
+    ) -> Result<AppUserRelays> {
+        let db = mm.db();
+
+        let user: AppUser = AppUserBmc::get_by(mm, field, val).await?;
+        let userrelay: Vec<AppUserRelay> = sqlb::select()
+            .table(Self::TABLE)
+            .columns(AppUserRelay::field_names())
+            .and_where("app_user_id", "=", user.id)
+            .fetch_all(db)
+            .await?;
+
+        let relay_ids: Vec<i32> = userrelay
+            .into_iter()
+            .map(|userrelay| userrelay.relay_id)
+            .collect();
+
+        let relays = RelayBmc::get_many(mm, &relay_ids).await?;
+
+        let userrelays = AppUserRelays {
+            app_user_id: user.id,
             pubkey: user.pubkey,
             name: user.name,
             dm_type: user.dm_type,

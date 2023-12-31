@@ -21,11 +21,10 @@ pub struct AppState {
 }
 
 pub async fn load_fedimint_client() -> Result<ClientArc> {
-    let db =
-        Database::new(
-            fedimint_rocksdb::RocksDb::open(CONFIG.fm_db_path.clone())?,
-            Default::default(),
-        );
+    let db = Database::new(
+        fedimint_rocksdb::RocksDb::open(CONFIG.fm_db_path.clone())?,
+        Default::default(),
+    );
     let mut client_builder = fedimint_client::Client::builder();
     if get_config_from_db(&db).await.is_none() {
         let federation_info = FederationInfo::from_invite_code(CONFIG.invite_code.clone()).await?;
@@ -44,6 +43,9 @@ pub async fn load_fedimint_client() -> Result<ClientArc> {
 pub async fn load_nostr_client() -> Result<Client> {
     let keys = Keys::from_sk_str(&CONFIG.nostr_sk)?;
     let client = nostr_sdk::Client::new(&keys);
+
+    client.add_relay(CONFIG.default_relay.as_str()).await?;
+    client.connect().await;
 
     Ok(client)
 }
