@@ -2,6 +2,7 @@ pub mod app_user;
 pub mod app_user_relays;
 mod base;
 pub mod invoice;
+pub mod invoice_state;
 pub mod relay;
 mod store;
 

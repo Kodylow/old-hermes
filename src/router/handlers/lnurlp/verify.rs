@@ -6,6 +6,7 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use tracing::info;
 
+use crate::model::invoice_state::InvoiceState;
 use crate::{error::AppError, model::invoice::InvoiceBmc, state::AppState};
 
 use super::LnurlStatus;
@@ -34,7 +35,7 @@ pub async fn handle_verify(
 
     let verify_response = LnurlVerifyResponse {
         status: LnurlStatus::Ok,
-        settled: invoice.settled,
+        settled: invoice.state == InvoiceState::Settled,
         preimage: "".to_string(), // TODO: figure out how to get the preimage from fedimint client
         pr: invoice.bolt11,
     };

@@ -1,7 +1,7 @@
 -- Up
 CREATE TABLE app_user (
     id SERIAL PRIMARY KEY,
-    pubkey VARCHAR(65) NOT NULL,
+    pubkey VARCHAR(64) NOT NULL,
     name VARCHAR(20) NOT NULL,
     dm_type VARCHAR(5) NOT NULL
 );
@@ -17,7 +17,8 @@ CREATE TABLE app_user_relays (
 CREATE TABLE invoice (
     id SERIAL PRIMARY KEY,
     op_id VARCHAR(64) NOT NULL,
+    app_user_id INTEGER NOT NULL references app_user(id),
     bolt11 VARCHAR(2048) NOT NULL,
-    amount INTEGER NOT NULL,
-    settled BOOLEAN NOT NULL DEFAULT FALSE
+    amount BIGINT NOT NULL,
+    state INTEGER NOT NULL DEFAULT 0
 );

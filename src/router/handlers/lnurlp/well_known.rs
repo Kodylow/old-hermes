@@ -68,12 +68,7 @@ pub async fn handle_well_known(
     let app_user = AppUserBmc::get_by(&state.mm, NameOrPubkey::Name, &username).await?;
 
     let res = LnurlWellKnownResponse {
-        callback: format!(
-            "http://{}/lnurlp/{}/callback",
-            CONFIG.domain,
-            username
-        )
-        .parse()?,
+        callback: format!("http://{}/lnurlp/{}/callback", CONFIG.domain, username).parse()?,
         max_sendable: Amount { msats: 100000 },
         min_sendable: Amount { msats: 1000 },
         metadata: "test metadata".to_string(),

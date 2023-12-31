@@ -18,6 +18,7 @@ use tracing::{error, info};
 use url::Url;
 use xmpp::{parsers::message::MessageType, Jid};
 
+use crate::model::invoice_state::InvoiceState;
 use crate::{
     config::CONFIG,
     error::AppError,
@@ -99,6 +100,7 @@ pub async fn handle_callback(
         &state.mm,
         InvoiceForCreate {
             op_id: op_id.to_string(),
+            app_user_id: nip05relays.app_user_id,
             amount: params.amount as i64,
             bolt11: pr.to_string(),
         },
@@ -115,10 +117,7 @@ pub async fn handle_callback(
 
     let verify_url = format!(
         "http://{}:{}/lnurlp/{}/verify/{}",
-        CONFIG.domain,
-        CONFIG.port,
-        username,
-        op_id
+        CONFIG.domain, CONFIG.port, username, op_id
     );
 
     let res = LnurlCallbackResponse {
@@ -127,13 +126,13 @@ pub async fn handle_callback(
         status: LnurlStatus::Ok,
         reason: None,
         verify: verify_url.parse()?,
-        routes: None,
+        routes: Some(vec![]),
     };
 
     Ok(Json(res))
 }
 
-async fn spawn_invoice_subscription(
+pub(crate) async fn spawn_invoice_subscription(
     state: AppState,
     id: i32,
     userrelays: AppUserRelays,
@@ -145,14 +144,17 @@ async fn spawn_invoice_subscription(
             match op_state {
                 LnReceiveState::Canceled { reason } => {
                     error!("Payment canceled, reason: {:?}", reason);
+                    InvoiceBmc::set_state(&state.mm, id, InvoiceState::Cancelled)
+                        .await
+                        .expect("settling invoice can't fail");
                     break;
                 }
                 LnReceiveState::Claimed => {
                     info!("Payment claimed");
-                    let invoice = InvoiceBmc::settle(&state.mm, id)
+                    let invoice = InvoiceBmc::set_state(&state.mm, id, InvoiceState::Settled)
                         .await
                         .expect("settling invoice can't fail");
-                    notify_user(state, invoice.amount as u64, userrelays.clone())
+                    notify_user(&state, invoice.amount as u64, userrelays.clone())
                         .await
                         .expect("notifying user can't fail");
                     break;
@@ -164,7 +166,7 @@ async fn spawn_invoice_subscription(
 }
 
 async fn notify_user(
-    state: AppState,
+    state: &AppState,
     amount: u64,
     app_user_relays: AppUserRelays,
 ) -> Result<(), Box<dyn std::error::Error>> {
@@ -173,12 +175,8 @@ async fn notify_user(
         .spend_notes(Amount::from_msats(amount), Duration::from_secs(604800), ())
         .await?;
     match app_user_relays.dm_type.as_str() {
-        "nostr" => {
-            send_nostr_dm(&state, &app_user_relays, operation_id, amount, notes)
-                .await
-        }
-        "xmpp" => send_xmpp_msg(&app_user_relays, operation_id, amount, notes)
-            .await,
+        "nostr" => send_nostr_dm(state, &app_user_relays, operation_id, amount, notes).await,
+        "xmpp" => send_xmpp_msg(&app_user_relays, operation_id, amount, notes).await,
         _ => Err(anyhow::anyhow!("Unsupported dm_type")),
     }?;
     Ok(())
@@ -191,7 +189,7 @@ async fn send_nostr_dm(
     amount: u64,
     notes: OOBNotes,
 ) -> Result<()> {
-    state
+    let dm = state
         .nostr
         .send_direct_msg(
             XOnlyPublicKey::from_str(&app_user_relays.pubkey).unwrap(),
@@ -204,6 +202,8 @@ async fn send_nostr_dm(
             None,
         )
         .await?;
+
+    info!("Sent nostr dm: {dm}");
     Ok(())
 }
 
@@ -215,8 +215,10 @@ async fn send_xmpp_msg(
     notes: OOBNotes,
 ) -> Result<()> {
     let mut xmpp_client = create_xmpp_client()?;
-    let recipient =
-        xmpp::BareJid::new(&format!("{}@{}", app_user_relays.name, CONFIG.xmpp_chat_server))?;
+    let recipient = xmpp::BareJid::new(&format!(
+        "{}@{}",
+        app_user_relays.name, CONFIG.xmpp_chat_server
+    ))?;
 
     xmpp_client
         .send_message(
