@@ -1,6 +1,7 @@
 use fedimint_client::derivable_secret::DerivableSecret;
 use fedimint_client::secret::{PlainRootSecretStrategy, RootSecretStrategy};
 use fedimint_core::api::InviteCode;
+use nostr::hashes::hex::FromHex;
 use std::env;
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -74,9 +75,6 @@ impl Config {
 }
 
 fn create_root_secret(secret: String) -> DerivableSecret {
-    let secret_bytes = secret.as_bytes();
-    assert_eq!(secret_bytes.len(), 64, "SECRET_KEY must be 64 bytes long");
-    let mut secret_array = [0; 64];
-    secret_array.copy_from_slice(secret_bytes);
-    PlainRootSecretStrategy::to_root_secret(&secret_array)
+    let secret_bytes: [u8; 64] = FromHex::from_hex(&secret).expect("Invalid hex string");
+    PlainRootSecretStrategy::to_root_secret(&secret_bytes)
 }
