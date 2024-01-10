@@ -25,6 +25,7 @@ pub struct AppUserRelaysForCreate {
     pub name: String,
     pub dm_type: String,
     pub relays: Vec<String>,
+    pub federation_id: String,
 }
 
 #[derive(Debug, Clone, FromRow, Serialize)]
@@ -51,6 +52,7 @@ impl AppUserRelaysBmc {
             pubkey: app_user_relays_c.pubkey,
             name: app_user_relays_c.name,
             dm_type: app_user_relays_c.dm_type,
+            federation_id: app_user_relays_c.federation_id,
         };
         let user_id = base::create::<Self, _>(mm, user_c).await?;
 
@@ -88,6 +90,7 @@ impl AppUserRelaysBmc {
 
         let userrelays = AppUserRelays {
             app_user_id: user.id,
+            federation_id: user.federation_id,
             pubkey: user.pubkey,
             name: user.name,
             dm_type: user.dm_type,
@@ -124,6 +127,7 @@ impl AppUserRelaysBmc {
 
         let userrelays = AppUserRelays {
             app_user_id: user.id,
+            federation_id: user.federation_id,
             pubkey: user.pubkey,
             name: user.name,
             dm_type: user.dm_type,

@@ -22,6 +22,7 @@ pub struct Invoice {
 #[derive(Debug, Clone, Fields, FromRow, Serialize)]
 pub struct InvoiceForCreate {
     pub op_id: String,
+    pub federation_id: String,
     pub app_user_id: i32,
     pub bolt11: String,
     pub amount: i64,

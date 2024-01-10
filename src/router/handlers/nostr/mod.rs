@@ -6,6 +6,7 @@ pub mod well_known;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppUserRelays {
     pub app_user_id: i32,
+    pub federation_id: String,
     pub pubkey: String,
     pub name: String,
     pub dm_type: String,

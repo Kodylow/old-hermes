@@ -22,7 +22,7 @@ async fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
 
     let state = AppState {
-        fm: load_fedimint_client().await?,
+        fm_clients: load_existing_clients().await,
         mm: ModelManager::new().await?,
         nostr: load_nostr_client().await?,
     };
@@ -48,8 +48,6 @@ async fn main() -> Result<()> {
 /// Starts subscription for all pending invoices from previous run
 async fn handle_pending_invoices(state: AppState) -> Result<()> {
     let invoices = InvoiceBmc::get_pending(&state.mm).await?;
-    let ln = state.fm.get_first_module::<LightningClientModule>();
-
     // sort invoices by user for efficiency
     let invoices_by_user = invoices
         .into_iter()
@@ -59,22 +57,29 @@ async fn handle_pending_invoices(state: AppState) -> Result<()> {
         .map(|(user, invs)| (user, invs.collect::<Vec<_>>()))
         .collect::<Vec<_>>();
 
-    for (user, invoices) in invoices_by_user {
-        let nip05relays = AppUserRelaysBmc::get_by_id(&state.mm, user).await?;
-        for invoice in invoices {
-            // create subscription to operation if it exists
+    let fm_clients = state.fm_clients.lock().await;
+    for invoice in invoices {
+        let nip05relays = AppUserRelaysBmc::get_by_id(&state.mm, invoice.app_user_id).await?;
+        if let Some(client) = fm_clients.get(&nip05relays.federation_id) {
+            let ln = client.get_first_module::<LightningClientModule>();
             if let Ok(subscription) = ln
                 .subscribe_ln_receive(invoice.op_id.parse().expect("invalid op_id"))
                 .await
             {
                 spawn_invoice_subscription(
                     state.clone(),
+                    nip05relays.federation_id,
                     invoice.id,
                     nip05relays.clone(),
                     subscription,
                 )
                 .await;
             }
+        } else {
+            error!(
+                "No client found for federation_id: {}",
+                nip05relays.federation_id
+            );
         }
     }
 

@@ -7,7 +7,7 @@ use axum::{
     Json,
 };
 use fedimint_client::oplog::UpdateStreamOrOutcome;
-use fedimint_core::{core::OperationId, task::spawn, Amount};
+use fedimint_core::{config::FederationId, core::OperationId, task::spawn, Amount};
 use fedimint_ln_client::{LightningClientModule, LnReceiveState};
 use fedimint_mint_client::{MintClientModule, OOBNotes};
 use futures::StreamExt;
@@ -105,8 +105,12 @@ pub async fn handle_callback(
     }
 
     let nip05relays = AppUserRelaysBmc::get_by(&state.mm, NameOrPubkey::Name, &username).await?;
-
-    let ln = state.fm.get_first_module::<LightningClientModule>();
+    let fm_client: ClientArc = state
+        .fm_clients
+        .lock()
+        .await
+        .get(FederationId::from_str(&nip05relays.federation_id))?;
+    let ln = fm_client.get_first_module::<LightningClientModule>();
     let (op_id, pr) = ln
         .create_bolt11_invoice(
             Amount {
@@ -123,6 +127,7 @@ pub async fn handle_callback(
         &state.mm,
         InvoiceForCreate {
             op_id: op_id.to_string(),
+            federation_id: nip05relays.federation_id,
             app_user_id: nip05relays.app_user_id,
             amount: params.amount as i64,
             bolt11: pr.to_string(),
@@ -149,7 +154,14 @@ pub async fn handle_callback(
         .await
         .expect("subscribing to a just created operation can't fail");
 
-    spawn_invoice_subscription(state, id, nip05relays, subscription).await;
+    spawn_invoice_subscription(
+        state,
+        FederationId::from_str(&nip05relays.federation_id),
+        id,
+        nip05relays,
+        subscription,
+    )
+    .await;
 
     let verify_url = format!(
         "http://{}:{}/lnurlp/{}/verify/{}",
@@ -170,6 +182,7 @@ pub async fn handle_callback(
 
 pub(crate) async fn spawn_invoice_subscription(
     state: AppState,
+    federation_id: FederationId,
     id: i32,
     userrelays: AppUserRelays,
     subscription: UpdateStreamOrOutcome<LnReceiveState>,
@@ -190,9 +203,15 @@ pub(crate) async fn spawn_invoice_subscription(
                     let invoice = InvoiceBmc::set_state(&state.mm, id, InvoiceState::Settled)
                         .await
                         .expect("settling invoice can't fail");
-                    notify_user(&state, id, invoice.amount as u64, userrelays.clone())
-                        .await
-                        .expect("notifying user can't fail");
+                    notify_user(
+                        &state,
+                        federation_id,
+                        id,
+                        invoice.amount as u64,
+                        userrelays.clone(),
+                    )
+                    .await
+                    .expect("notifying user can't fail");
                     break;
                 }
                 _ => {}
@@ -203,10 +222,16 @@ pub(crate) async fn spawn_invoice_subscription(
 
 async fn notify_user(
     state: &AppState,
+    federation_id: FederationId,
     id: i32,
     amount: u64,
     app_user_relays: AppUserRelays,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    let fm_client: ClientArc = state
+        .fm_clients
+        .lock()
+        .await
+        .get(FederationId::from_str(&federation_id))?;
     let mint = state.fm.get_first_module::<MintClientModule>();
     let (operation_id, notes) = mint
         .spend_notes(Amount::from_msats(amount), Duration::from_secs(604800), ())

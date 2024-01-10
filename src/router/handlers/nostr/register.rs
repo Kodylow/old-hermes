@@ -18,6 +18,7 @@ pub struct UserParams {
     pub name: String,
     pub dm_type: SupportedDmType,
     pub relays: Option<Vec<String>>,
+    pub federation_id: FederationId,
 }
 
 #[axum_macros::debug_handler]
@@ -50,6 +51,7 @@ pub async fn handle_register(
         name: params.name,
         dm_type: params.dm_type.to_string(),
         relays,
+        federation_id: params.federation_id.to_string(),
     };
 
     match AppUserRelaysBmc::register(&state.mm, nip05relays_c).await {
