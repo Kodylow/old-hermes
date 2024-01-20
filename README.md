@@ -1,8 +1,8 @@
 <img src="assets/hermes_nostrich.png" width="500">
 
-# Hermes: A Noncustodial Lightning Address Messenger w/Fedimint
+# Hermes: A Lightning Address Messenger w/Fedimint
 
-Hermes is a non-custodial, asynchronous lightning address server that uses Fedimint Ecash on the backend. The protocol flow of Hermes is as follows:
+Hermes is an asynchronous lightning address server that uses Fedimint Ecash on the backend. The protocol flow of Hermes is as follows:
 
 ## Registration
 
