@@ -4,7 +4,7 @@
 
 Hermes is an asynchronous lightning address server that uses Fedimint Ecash on the backend. The protocol flow of Hermes is as follows:
 
-**Note:** The Hermes server does not receive the ecash (**unless it's lying and giving its own invoices and not following the protocol at all, which it might be doing if malicious or compromised**), it is locked as a Fedimint Lightning Gateway Contract to the User's Pubkey. It doesn't even need to send you the notification, your Fedimint Client can scan for the payment on its own. The notification just makes the scan faster by telling the client to look for a specific payment or set of payments.
+**Note:** The Hermes server does not receive the ecash (**unless it's lying and giving its own invoices and not following the protocol at all, which it might be doing if malicious or compromised. It's a Lightning Address not magic.**), it is locked as a Fedimint Lightning Gateway Contract to the User's Pubkey. It doesn't even need to send you the notification, your Fedimint Client can scan for the payment on its own. The notification just makes the scan faster by telling the client to look for a specific payment or set of payments.
 
 ## Registration
 
