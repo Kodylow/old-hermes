@@ -94,6 +94,7 @@ impl AppUserRelaysBmc {
             pubkey: user.pubkey,
             name: user.name,
             dm_type: user.dm_type,
+            federation_id: user.federation_id,
             relays: relays
                 .into_iter()
                 .map(|relay| relay.relay.to_string())
@@ -130,6 +131,7 @@ impl AppUserRelaysBmc {
             pubkey: user.pubkey,
             name: user.name,
             dm_type: user.dm_type,
+            federation_id: user.federation_id,
             relays: relays
                 .into_iter()
                 .map(|relay| relay.relay.to_string())

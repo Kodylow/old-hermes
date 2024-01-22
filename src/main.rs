@@ -1,4 +1,8 @@
+use std::collections::HashMap;
+use std::str::FromStr;
+
 use anyhow::Result;
+use fedimint_core::config::FederationId;
 use fedimint_ln_client::LightningClientModule;
 use itertools::Itertools;
 use tracing::{error, info};
@@ -10,12 +14,12 @@ mod router;
 mod state;
 
 mod utils;
-use state::{load_fedimint_client, AppState};
+use state::AppState;
 
 use crate::model::app_user_relays::AppUserRelaysBmc;
 use crate::model::invoice::InvoiceBmc;
 use crate::router::handlers::lnurlp::callback::spawn_invoice_subscription;
-use crate::{config::CONFIG, model::ModelManager, state::load_nostr_client};
+use crate::config::CONFIG;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -44,55 +48,40 @@ async fn main() -> Result<()> {
 /// Starts subscription for all pending invoices from previous run
 async fn handle_pending_invoices(state: AppState) -> Result<()> {
     let invoices = InvoiceBmc::get_pending(&state.mm).await?;
-    for (id, client) in state.fm.clients.lock().await.into_iter() {
-        if let ln = client.get_first_module::<LightningClientModule>() {
-            for invoice in invoices.iter() {
-                if let Ok(subscription) = ln
-                    .subscribe_ln_receive(invoice.op_id.parse().expect("invalid op_id"))
-                    .await
-                {
-                    let nip05relays = AppUserRelaysBmc::get_by_id(&state.mm, invoice.app_user_id)
-                        .await?;
-                    spawn_invoice_subscription(
-                        state.clone(),
-                        invoice.id,
-                        nip05relays,
-                        subscription,
-                    )
-                    .await;
+
+    // Group invoices by federation_id
+    let invoices_by_federation = invoices
+        .into_iter()
+        .group_by(|i| i.federation_id.clone())
+        .into_iter()
+        .map(|(federation_id, invs)| (federation_id, invs.collect::<Vec<_>>()))
+        .collect::<HashMap<_, _>>();
+    
+    for (federation_id, invoices) in invoices_by_federation {
+        // Get the corresponding multimint client for the federation_id
+        if let Ok(federation_id) = FederationId::from_str(&federation_id) {
+            if let Some(client) = state.fm.clients.lock().await.get(&federation_id) {
+                let ln = client.get_first_module::<LightningClientModule>();
+                for invoice in invoices {
+                    // Create subscription to operation if it exists
+                    if let Ok(subscription) = ln
+                        .subscribe_ln_receive(invoice.op_id.parse().expect("invalid op_id"))
+                        .await
+                    {
+                        let nip05relays = AppUserRelaysBmc::get_by_id(&state.mm, invoice.app_user_id)
+                            .await?;
+                        spawn_invoice_subscription(
+                            state.clone(),
+                            invoice.id,
+                            nip05relays.clone(),
+                            subscription,
+                        )
+                        .await;
+                    }
                 }
             }
         }
     }
-    let ln = state.fm.get_first_module::<LightningClientModule>();
 
-    // sort invoices by user for efficiency
-    let invoices_by_user = invoices
-        .into_iter()
-        .sorted_by_key(|i| i.app_user_id)
-        .group_by(|i| i.app_user_id)
-        .into_iter()
-        .map(|(user, invs)| (user, invs.collect::<Vec<_>>()))
-        .collect::<Vec<_>>();
-
-    for (user, invoices) in invoices_by_user {
-        let nip05relays = AppUserRelaysBmc::get_by_id(&state.mm, user).await?;
-        for invoice in invoices {
-            // create subscription to operation if it exists
-            if let Ok(subscription) = ln
-                .subscribe_ln_receive(invoice.op_id.parse().expect("invalid op_id"))
-                .await
-            {
-                spawn_invoice_subscription(
-                    state.clone(),
-                    invoice.id,
-                    nip05relays.clone(),
-                    subscription,
-                )
-                .await;
-            }
-        }
-    }
-
-    Ok(())
+    Ok(())   
 }

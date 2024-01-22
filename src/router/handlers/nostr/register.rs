@@ -1,5 +1,6 @@
 use anyhow::anyhow;
 use axum::{extract::State, http::StatusCode, Json};
+use fedimint_core::config::FederationId;
 use serde::Deserialize;
 use tracing::info;
 
@@ -17,6 +18,7 @@ pub struct UserParams {
     pub pubkey: String,
     pub name: String,
     pub dm_type: SupportedDmType,
+    pub federation_id: FederationId,
     pub relays: Option<Vec<String>>,
 }
 
@@ -26,6 +28,14 @@ pub async fn handle_register(
     Json(params): Json<UserParams>,
 ) -> Result<Json<bool>, AppError> {
     info!("register called with pubkey: {:?}", params.pubkey);
+
+    // Check if the federationId is in the multimint map
+    if !state.fm.clients.lock().await.contains_key(&params.federation_id) {
+        return Err(AppError::new(
+            StatusCode::BAD_REQUEST,
+            anyhow!("FederationId not found in multimint map"),
+        ));
+    }
 
     let relays = match params.dm_type {
         SupportedDmType::Nostr => params
@@ -47,6 +57,7 @@ pub async fn handle_register(
 
     let nip05relays_c = AppUserRelaysForCreate {
         pubkey: params.pubkey,
+        federation_id: params.federation_id.to_string(),
         name: params.name,
         dm_type: params.dm_type.to_string(),
         relays,
