@@ -192,6 +192,9 @@ pub(crate) async fn spawn_invoice_subscription(
     subscription: UpdateStreamOrOutcome<LnReceiveState>,
 ) {
     spawn("waiting for invoice being paid", async move {
+        let locked_clients = state.fm.clients.lock().await;
+        let client = locked_clients.get(&FederationId::from_str(&userrelays.federation_id).unwrap()).unwrap();
+        let nostr = state.nostr.clone();
         let mut stream = subscription.into_stream();
         while let Some(op_state) = stream.next().await {
             match op_state {
@@ -207,7 +210,7 @@ pub(crate) async fn spawn_invoice_subscription(
                     let invoice = InvoiceBmc::set_state(&state.mm, id, InvoiceState::Settled)
                         .await
                         .expect("settling invoice can't fail");
-                    notify_user(&state, id, invoice.amount as u64, userrelays.clone())
+                    notify_user(client, &nostr, &state.mm, id, invoice.amount as u64, userrelays.clone())
                         .await
                         .expect("notifying user can't fail");
                     break;
