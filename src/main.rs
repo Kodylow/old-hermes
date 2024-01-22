@@ -16,10 +16,10 @@ mod state;
 mod utils;
 use state::AppState;
 
+use crate::config::CONFIG;
 use crate::model::app_user_relays::AppUserRelaysBmc;
 use crate::model::invoice::InvoiceBmc;
 use crate::router::handlers::lnurlp::callback::spawn_invoice_subscription;
-use crate::config::CONFIG;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -56,7 +56,7 @@ async fn handle_pending_invoices(state: AppState) -> Result<()> {
         .into_iter()
         .map(|(federation_id, invs)| (federation_id, invs.collect::<Vec<_>>()))
         .collect::<HashMap<_, _>>();
-    
+
     for (federation_id, invoices) in invoices_by_federation {
         // Get the corresponding multimint client for the federation_id
         if let Ok(federation_id) = FederationId::from_str(&federation_id) {
@@ -68,8 +68,8 @@ async fn handle_pending_invoices(state: AppState) -> Result<()> {
                         .subscribe_ln_receive(invoice.op_id.parse().expect("invalid op_id"))
                         .await
                     {
-                        let nip05relays = AppUserRelaysBmc::get_by_id(&state.mm, invoice.app_user_id)
-                            .await?;
+                        let nip05relays =
+                            AppUserRelaysBmc::get_by_id(&state.mm, invoice.app_user_id).await?;
                         spawn_invoice_subscription(
                             state.clone(),
                             invoice.id,
@@ -83,5 +83,5 @@ async fn handle_pending_invoices(state: AppState) -> Result<()> {
         }
     }
 
-    Ok(())   
+    Ok(())
 }

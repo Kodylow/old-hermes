@@ -30,7 +30,13 @@ pub async fn handle_register(
     info!("register called with pubkey: {:?}", params.pubkey);
 
     // Check if the federationId is in the multimint map
-    if !state.fm.clients.lock().await.contains_key(&params.federation_id) {
+    if !state
+        .fm
+        .clients
+        .lock()
+        .await
+        .contains_key(&params.federation_id)
+    {
         return Err(AppError::new(
             StatusCode::BAD_REQUEST,
             anyhow!("FederationId not found in multimint map"),

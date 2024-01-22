@@ -1,6 +1,5 @@
 use std::{str::FromStr, time::Duration};
 
-use nostr_sdk::Client;
 use anyhow::Result;
 use axum::{
     extract::{Path, Query, State},
@@ -8,7 +7,7 @@ use axum::{
     Json,
 };
 use fedimint_client::{oplog::UpdateStreamOrOutcome, ClientArc};
-use fedimint_core::{core::OperationId, task::spawn, Amount, config::FederationId};
+use fedimint_core::{config::FederationId, core::OperationId, task::spawn, Amount};
 use fedimint_ln_client::{LightningClientModule, LnReceiveState};
 use fedimint_mint_client::{MintClientModule, OOBNotes};
 use futures::StreamExt;
@@ -20,14 +19,15 @@ use nostr::prelude::rand::rngs::OsRng;
 use nostr::prelude::rand::RngCore;
 use nostr::secp256k1::XOnlyPublicKey;
 use nostr::{Event, EventBuilder, JsonUtil, Kind};
+use nostr_sdk::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tracing::{error, info};
 use url::Url;
 use xmpp::{parsers::message::MessageType, Jid};
 
-use crate::model::{invoice_state::InvoiceState, ModelManager};
 use crate::model::zap::{Zap, ZapBmc};
+use crate::model::{invoice_state::InvoiceState, ModelManager};
 use crate::{
     config::CONFIG,
     error::AppError,
@@ -112,7 +112,7 @@ pub async fn handle_callback(
             anyhow::anyhow!("Invalid federation_id: {}", e),
         )
     })?;
-    
+
     let locked_clients = state.fm.clients.lock().await.clone();
     let client = locked_clients.get(&federation_id).ok_or_else(|| {
         AppError::new(
@@ -193,7 +193,9 @@ pub(crate) async fn spawn_invoice_subscription(
 ) {
     spawn("waiting for invoice being paid", async move {
         let locked_clients = state.fm.clients.lock().await;
-        let client = locked_clients.get(&FederationId::from_str(&userrelays.federation_id).unwrap()).unwrap();
+        let client = locked_clients
+            .get(&FederationId::from_str(&userrelays.federation_id).unwrap())
+            .unwrap();
         let nostr = state.nostr.clone();
         let mut stream = subscription.into_stream();
         while let Some(op_state) = stream.next().await {
@@ -210,9 +212,16 @@ pub(crate) async fn spawn_invoice_subscription(
                     let invoice = InvoiceBmc::set_state(&state.mm, id, InvoiceState::Settled)
                         .await
                         .expect("settling invoice can't fail");
-                    notify_user(client, &nostr, &state.mm, id, invoice.amount as u64, userrelays.clone())
-                        .await
-                        .expect("notifying user can't fail");
+                    notify_user(
+                        client,
+                        &nostr,
+                        &state.mm,
+                        id,
+                        invoice.amount as u64,
+                        userrelays.clone(),
+                    )
+                    .await
+                    .expect("notifying user can't fail");
                     break;
                 }
                 _ => {}
