@@ -21,11 +21,7 @@ use crate::{config::CONFIG, model::ModelManager, state::load_nostr_client};
 async fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
 
-    let state = AppState {
-        fm: load_fedimint_client().await?,
-        mm: ModelManager::new().await?,
-        nostr: load_nostr_client().await?,
-    };
+    let state = AppState::new().await?;
 
     let app = router::create_router(state.clone()).await?;
 
@@ -48,6 +44,26 @@ async fn main() -> Result<()> {
 /// Starts subscription for all pending invoices from previous run
 async fn handle_pending_invoices(state: AppState) -> Result<()> {
     let invoices = InvoiceBmc::get_pending(&state.mm).await?;
+    for (id, client) in state.fm.clients.lock().await.into_iter() {
+        if let ln = client.get_first_module::<LightningClientModule>() {
+            for invoice in invoices.iter() {
+                if let Ok(subscription) = ln
+                    .subscribe_ln_receive(invoice.op_id.parse().expect("invalid op_id"))
+                    .await
+                {
+                    let nip05relays = AppUserRelaysBmc::get_by_id(&state.mm, invoice.app_user_id)
+                        .await?;
+                    spawn_invoice_subscription(
+                        state.clone(),
+                        invoice.id,
+                        nip05relays,
+                        subscription,
+                    )
+                    .await;
+                }
+            }
+        }
+    }
     let ln = state.fm.get_first_module::<LightningClientModule>();
 
     // sort invoices by user for efficiency
