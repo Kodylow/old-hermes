@@ -1674,6 +1674,7 @@ dependencies = [
  "itertools 0.12.0",
  "lazy_static",
  "lightning-invoice 0.27.0",
+ "multimint",
  "nostr",
  "nostr-sdk",
  "serde",
@@ -2510,6 +2511,28 @@ dependencies = [
  "libc",
  "wasi",
  "windows-sys 0.48.0",
+]
+
+[[package]]
+name = "multimint"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c726665f7cc97578794106f0b458c4fa22f691d36b7697089bfb8b4c8e2f2a42"
+dependencies = [
+ "anyhow",
+ "fedimint",
+ "fedimint-client",
+ "fedimint-core",
+ "fedimint-ln-client",
+ "fedimint-mint-client",
+ "fedimint-rocksdb",
+ "fedimint-wallet-client",
+ "futures-util",
+ "rand",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
 ]
 
 [[package]]

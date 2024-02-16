@@ -3,7 +3,8 @@ CREATE TABLE app_user (
     id SERIAL PRIMARY KEY,
     pubkey VARCHAR(64) NOT NULL,
     name VARCHAR(20) NOT NULL,
-    dm_type VARCHAR(5) NOT NULL
+    dm_type VARCHAR(5) NOT NULL,
+    federation_id VARCHAR(64) NOT NULL,
 );
 CREATE TABLE relay (
     id SERIAL PRIMARY KEY,
@@ -16,6 +17,7 @@ CREATE TABLE app_user_relays (
 );
 CREATE TABLE invoice (
     id SERIAL PRIMARY KEY,
+    federation_id VARCHAR(64) NOT NULL,
     op_id VARCHAR(64) NOT NULL,
     app_user_id INTEGER NOT NULL references app_user(id),
     bolt11 VARCHAR(2048) NOT NULL,

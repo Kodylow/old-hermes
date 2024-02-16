@@ -9,5 +9,6 @@ pub struct AppUserRelays {
     pub pubkey: String,
     pub name: String,
     pub dm_type: String,
+    pub federation_id: String,
     pub relays: Vec<String>,
 }

@@ -6,8 +6,8 @@ use axum::{
     http::StatusCode,
     Json,
 };
-use fedimint_client::oplog::UpdateStreamOrOutcome;
-use fedimint_core::{core::OperationId, task::spawn, Amount};
+use fedimint_client::{oplog::UpdateStreamOrOutcome, ClientArc};
+use fedimint_core::{config::FederationId, core::OperationId, task::spawn, Amount};
 use fedimint_ln_client::{LightningClientModule, LnReceiveState};
 use fedimint_mint_client::{MintClientModule, OOBNotes};
 use futures::StreamExt;
@@ -19,14 +19,15 @@ use nostr::prelude::rand::rngs::OsRng;
 use nostr::prelude::rand::RngCore;
 use nostr::secp256k1::XOnlyPublicKey;
 use nostr::{Event, EventBuilder, JsonUtil, Kind};
+use nostr_sdk::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tracing::{error, info};
 use url::Url;
 use xmpp::{parsers::message::MessageType, Jid};
 
-use crate::model::invoice_state::InvoiceState;
 use crate::model::zap::{Zap, ZapBmc};
+use crate::model::{invoice_state::InvoiceState, ModelManager};
 use crate::{
     config::CONFIG,
     error::AppError,
@@ -105,8 +106,23 @@ pub async fn handle_callback(
     }
 
     let nip05relays = AppUserRelaysBmc::get_by(&state.mm, NameOrPubkey::Name, &username).await?;
+    let federation_id = FederationId::from_str(&nip05relays.federation_id).map_err(|e| {
+        AppError::new(
+            StatusCode::BAD_REQUEST,
+            anyhow::anyhow!("Invalid federation_id: {}", e),
+        )
+    })?;
 
-    let ln = state.fm.get_first_module::<LightningClientModule>();
+    let locked_clients = state.fm.clients.lock().await.clone();
+    let client = locked_clients.get(&federation_id).ok_or_else(|| {
+        AppError::new(
+            StatusCode::BAD_REQUEST,
+            anyhow::anyhow!("FederationId not found in multimint map"),
+        )
+    })?;
+
+    let ln = client.get_first_module::<LightningClientModule>();
+
     let (op_id, pr) = ln
         .create_bolt11_invoice(
             Amount {
@@ -123,6 +139,7 @@ pub async fn handle_callback(
         &state.mm,
         InvoiceForCreate {
             op_id: op_id.to_string(),
+            federation_id: nip05relays.federation_id.clone(),
             app_user_id: nip05relays.app_user_id,
             amount: params.amount as i64,
             bolt11: pr.to_string(),
@@ -175,6 +192,11 @@ pub(crate) async fn spawn_invoice_subscription(
     subscription: UpdateStreamOrOutcome<LnReceiveState>,
 ) {
     spawn("waiting for invoice being paid", async move {
+        let locked_clients = state.fm.clients.lock().await;
+        let client = locked_clients
+            .get(&FederationId::from_str(&userrelays.federation_id).unwrap())
+            .unwrap();
+        let nostr = state.nostr.clone();
         let mut stream = subscription.into_stream();
         while let Some(op_state) = stream.next().await {
             match op_state {
@@ -190,9 +212,16 @@ pub(crate) async fn spawn_invoice_subscription(
                     let invoice = InvoiceBmc::set_state(&state.mm, id, InvoiceState::Settled)
                         .await
                         .expect("settling invoice can't fail");
-                    notify_user(&state, id, invoice.amount as u64, userrelays.clone())
-                        .await
-                        .expect("notifying user can't fail");
+                    notify_user(
+                        client,
+                        &nostr,
+                        &state.mm,
+                        id,
+                        invoice.amount as u64,
+                        userrelays.clone(),
+                    )
+                    .await
+                    .expect("notifying user can't fail");
                     break;
                 }
                 _ => {}
@@ -202,44 +231,45 @@ pub(crate) async fn spawn_invoice_subscription(
 }
 
 async fn notify_user(
-    state: &AppState,
+    client: &ClientArc,
+    nostr: &Client,
+    mm: &ModelManager,
     id: i32,
     amount: u64,
     app_user_relays: AppUserRelays,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let mint = state.fm.get_first_module::<MintClientModule>();
+    let mint = client.get_first_module::<MintClientModule>();
     let (operation_id, notes) = mint
         .spend_notes(Amount::from_msats(amount), Duration::from_secs(604800), ())
         .await?;
     match app_user_relays.dm_type.as_str() {
-        "nostr" => send_nostr_dm(state, &app_user_relays, operation_id, amount, notes).await,
+        "nostr" => send_nostr_dm(nostr, &app_user_relays, operation_id, amount, notes).await,
         "xmpp" => send_xmpp_msg(&app_user_relays, operation_id, amount, notes).await,
         _ => Err(anyhow::anyhow!("Unsupported dm_type")),
     }?;
 
     // Send zap if needed
-    if let Ok(zap) = ZapBmc::get(&state.mm, id).await {
+    if let Ok(zap) = ZapBmc::get(&mm, id).await {
         let request = Event::from_json(zap.request)?;
         let event = create_zap_event(request, amount)?;
 
-        let event_id = state.nostr.send_event(event).await?;
+        let event_id = nostr.send_event(event).await?;
         info!("Broadcasted zap {event_id}!");
 
-        ZapBmc::set_event_id(&state.mm, id, event_id).await?;
+        ZapBmc::set_event_id(&mm, id, event_id).await?;
     }
 
     Ok(())
 }
 
 async fn send_nostr_dm(
-    state: &AppState,
+    nostr: &Client,
     app_user_relays: &AppUserRelays,
     operation_id: OperationId,
     amount: u64,
     notes: OOBNotes,
 ) -> Result<()> {
-    let dm = state
-        .nostr
+    let dm = nostr
         .send_direct_msg(
             XOnlyPublicKey::from_str(&app_user_relays.pubkey).unwrap(),
             json!({
