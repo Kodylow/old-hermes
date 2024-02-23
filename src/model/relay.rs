@@ -1,12 +1,11 @@
 #![allow(dead_code)]
-use super::{
-    base::{self, DbBmc},
-    ModelManager,
-};
 use anyhow::Result;
 use serde::Serialize;
 use sqlb::Fields;
 use sqlx::FromRow;
+
+use super::base::{self, DbBmc};
+use super::ModelManager;
 
 #[derive(Debug, Clone, Fields, FromRow, Serialize)]
 pub struct Relay {

@@ -1,8 +1,8 @@
-use crate::config::CONFIG;
 use anyhow::{anyhow, Result};
-
 use sqlx::postgres::PgPoolOptions;
 use sqlx::{Pool, Postgres};
+
+use crate::config::CONFIG;
 
 pub type Db = Pool<Postgres>;
 

@@ -1,4 +1,5 @@
-use std::{fmt, fs::read_to_string};
+use std::fmt;
+use std::fs::read_to_string;
 
 use serde::{Deserialize, Serialize};
 

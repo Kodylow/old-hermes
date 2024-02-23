@@ -1,13 +1,12 @@
 #![allow(dead_code)]
-use super::{
-    base::{self, DbBmc},
-    ModelManager,
-};
-use crate::model::invoice_state::InvoiceState;
 use anyhow::{anyhow, Result};
 use serde::Serialize;
 use sqlb::{Fields, HasFields};
 use sqlx::FromRow;
+
+use super::base::{self, DbBmc};
+use super::ModelManager;
+use crate::model::invoice_state::InvoiceState;
 
 #[derive(Debug, Clone, Fields, FromRow, Serialize)]
 pub struct Invoice {

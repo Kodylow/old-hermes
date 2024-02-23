@@ -1,15 +1,12 @@
 #![allow(dead_code)]
-use crate::router::handlers::NameOrPubkey;
-
-use super::{
-    base::{self, DbBmc},
-    ModelManager,
-};
 use anyhow::{anyhow, Result};
 use serde::Serialize;
-use sqlb::Fields;
-use sqlb::HasFields;
+use sqlb::{Fields, HasFields};
 use sqlx::FromRow;
+
+use super::base::{self, DbBmc};
+use super::ModelManager;
+use crate::router::handlers::NameOrPubkey;
 
 #[derive(Debug, Clone, Fields, FromRow, Serialize)]
 pub struct AppUser {

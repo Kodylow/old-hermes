@@ -1,17 +1,14 @@
-use crate::router::handlers::{nostr::AppUserRelays, NameOrPubkey};
-
-use super::{
-    app_user::{AppUser, AppUserBmc, AppUserForCreate},
-    base::{self, DbBmc},
-    relay::{RelayBmc, RelayForCreate},
-    ModelManager,
-};
-
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use sqlb::Fields;
-use sqlb::HasFields;
+use sqlb::{Fields, HasFields};
 use sqlx::FromRow;
+
+use super::app_user::{AppUser, AppUserBmc, AppUserForCreate};
+use super::base::{self, DbBmc};
+use super::relay::{RelayBmc, RelayForCreate};
+use super::ModelManager;
+use crate::router::handlers::nostr::AppUserRelays;
+use crate::router::handlers::NameOrPubkey;
 
 #[derive(Debug, Clone, Fields, FromRow, Serialize)]
 pub struct AppUserRelay {

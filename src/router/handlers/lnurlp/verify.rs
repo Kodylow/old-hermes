@@ -1,15 +1,13 @@
-use axum::{
-    extract::{Path, State},
-    Json,
-};
-
+use axum::extract::{Path, State};
+use axum::Json;
 use serde::{Deserialize, Serialize};
 use tracing::info;
 
-use crate::model::invoice_state::InvoiceState;
-use crate::{error::AppError, model::invoice::InvoiceBmc, state::AppState};
-
 use super::LnurlStatus;
+use crate::error::AppError;
+use crate::model::invoice::InvoiceBmc;
+use crate::model::invoice_state::InvoiceState;
+use crate::state::AppState;
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

@@ -1,20 +1,17 @@
 use std::collections::HashMap;
+use std::str::FromStr;
 
-use axum::{
-    extract::{Query, State},
-    Json,
-};
+use axum::extract::{Query, State};
+use axum::Json;
 use nostr::prelude::XOnlyPublicKey;
 use serde::{Deserialize, Serialize};
-use std::str::FromStr;
 use tracing::info;
 
-use crate::{
-    error::AppError, model::app_user_relays::AppUserRelaysBmc, router::handlers::NameOrPubkey,
-    state::AppState,
-};
-
 use super::AppUserRelays;
+use crate::error::AppError;
+use crate::model::app_user_relays::AppUserRelaysBmc;
+use crate::router::handlers::NameOrPubkey;
+use crate::state::AppState;
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct UserWellKnownParams {

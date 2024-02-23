@@ -7,8 +7,9 @@ pub mod relay;
 mod store;
 pub mod zap;
 
-use crate::model::store::{new_db_pool, Db};
 use anyhow::Result;
+
+use crate::model::store::{new_db_pool, Db};
 
 #[derive(Clone, Debug)]
 pub struct ModelManager {

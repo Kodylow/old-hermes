@@ -1,10 +1,10 @@
+use anyhow::Result;
+use config::CONFIG;
 use multimint::MultiMint;
 use nostr_sdk::Client;
 
-use crate::{config, model::ModelManager};
-
-use anyhow::Result;
-use config::CONFIG;
+use crate::config;
+use crate::model::ModelManager;
 
 #[derive(Clone)]
 pub struct AppState {

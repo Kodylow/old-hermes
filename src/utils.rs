@@ -1,9 +1,11 @@
-use std::{fmt::Display, str::FromStr};
+use std::fmt::Display;
+use std::str::FromStr;
 
-use crate::config::CONFIG;
 use anyhow::Result;
 use serde::{de, Deserialize, Deserializer};
 use xmpp::Agent;
+
+use crate::config::CONFIG;
 
 pub fn empty_string_as_none<'de, D, T>(de: D) -> Result<Option<T>, D::Error>
 where
@@ -18,7 +20,8 @@ where
     }
 }
 
-// TODO: XMPP client doesn't implement Clone, so we can't use it in AppState which is annoying
+// TODO: XMPP client doesn't implement Clone, so we can't use it in AppState
+// which is annoying
 pub fn create_xmpp_client() -> Result<Agent> {
     let jid = xmpp::BareJid::new(&format!(
         "{}@{}",

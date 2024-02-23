@@ -1,12 +1,13 @@
+use std::env;
+use std::path::PathBuf;
+use std::str::FromStr;
+
 use fedimint_client::derivable_secret::DerivableSecret;
 use fedimint_client::secret::{PlainRootSecretStrategy, RootSecretStrategy};
 use fedimint_core::api::InviteCode;
 use nostr::hashes::hex::FromHex;
 use nostr::key::FromSkStr;
 use nostr::Keys;
-use std::env;
-use std::path::PathBuf;
-use std::str::FromStr;
 use tracing::info;
 
 lazy_static::lazy_static! {

@@ -1,9 +1,3 @@
-use super::{LnurlStatus, LnurlType};
-use crate::config::CONFIG;
-use crate::error::AppError;
-use crate::model::app_user::AppUserBmc;
-use crate::router::handlers::NameOrPubkey;
-use crate::state::AppState;
 use axum::extract::{Path, State};
 use axum::Json;
 use fedimint_core::Amount;
@@ -12,6 +6,13 @@ use serde::ser::{SerializeTuple, Serializer};
 use serde::{Deserialize, Serialize};
 use tracing::info;
 use url::Url;
+
+use super::{LnurlStatus, LnurlType};
+use crate::config::CONFIG;
+use crate::error::AppError;
+use crate::model::app_user::AppUserBmc;
+use crate::router::handlers::NameOrPubkey;
+use crate::state::AppState;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum MetadataType {

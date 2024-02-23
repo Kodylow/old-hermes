@@ -1,8 +1,6 @@
 use anyhow::Result;
-use axum::{
-    routing::{get, post},
-    Router,
-};
+use axum::routing::{get, post};
+use axum::Router;
 pub mod handlers;
 
 use handlers::*;

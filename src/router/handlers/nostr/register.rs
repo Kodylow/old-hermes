@@ -1,17 +1,16 @@
 use anyhow::anyhow;
-use axum::{extract::State, http::StatusCode, Json};
+use axum::extract::State;
+use axum::http::StatusCode;
+use axum::Json;
 use fedimint_core::config::FederationId;
 use serde::Deserialize;
 use tracing::info;
 
-use crate::{
-    config::CONFIG,
-    error::AppError,
-    model::app_user_relays::{AppUserRelaysBmc, AppUserRelaysForCreate},
-    state::AppState,
-};
-
+use crate::config::CONFIG;
+use crate::error::AppError;
+use crate::model::app_user_relays::{AppUserRelaysBmc, AppUserRelaysForCreate};
 use crate::router::SupportedDmType;
+use crate::state::AppState;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct UserParams {

@@ -1,8 +1,10 @@
 #![allow(dead_code)]
-use crate::model::ModelManager;
 use anyhow::{anyhow, Result};
 use sqlb::HasFields;
-use sqlx::{postgres::PgRow, FromRow};
+use sqlx::postgres::PgRow;
+use sqlx::FromRow;
+
+use crate::model::ModelManager;
 
 pub trait DbBmc {
     const TABLE: &'static str;
