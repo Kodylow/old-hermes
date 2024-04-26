@@ -1,3 +1,7 @@
+# ARCHIVED
+
+### This project has been archived, see https://github.com/kodylow/hermes for the new version.
+
 <img src="assets/hermes_nostrich.png" width="500">
 
 # Hermes: A Lightning Address Messenger w/Fedimint
